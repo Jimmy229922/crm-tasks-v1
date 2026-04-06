@@ -131,6 +131,7 @@
       "saveFailed": "Could not save task. Please try again."
     },
     "buttons": {
+      "search": "Search",
       "openUserProfile": "Open User Profile",
       "openTaskDetails": "Open Task Details",
       "openClientProfile": "Open Client Profile",

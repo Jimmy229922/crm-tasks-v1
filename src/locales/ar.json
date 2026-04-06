@@ -131,6 +131,7 @@
       "saveFailed": "تعذر حفظ المهمة. حاول مرة أخرى."
     },
     "buttons": {
+      "search": "بحث",
       "openUserProfile": "فتح ملف المستخدم",
       "openTaskDetails": "فتح تفاصيل المهمة",
       "openClientProfile": "فتح ملف العميل",

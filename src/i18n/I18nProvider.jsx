@@ -1,17 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DEFAULT_LOCALE,
-  LOCALE_STORAGE_KEY,
   getLocaleDirection,
-  getLocaleFromEnvironment,
-  getLocalizedString,
   normalizeLocale,
 } from "./catalog";
 
 const I18nContext = createContext(null);
 
 export function I18nProvider({ children }) {
-  const [locale, setLocaleState] = useState(() => normalizeLocale(getLocaleFromEnvironment() || DEFAULT_LOCALE));
+  const { t: i18nTranslate, i18n } = useTranslation();
+  const [locale, setLocaleState] = useState(() => normalizeLocale(i18n.resolvedLanguage || i18n.language || DEFAULT_LOCALE));
+
+  useEffect(() => {
+    const nextLocale = normalizeLocale(i18n.resolvedLanguage || i18n.language || DEFAULT_LOCALE);
+    if (nextLocale !== locale) {
+      setLocaleState(nextLocale);
+    }
+  }, [i18n.language, i18n.resolvedLanguage, locale]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -19,14 +25,6 @@ export function I18nProvider({ children }) {
       document.documentElement.lang = locale;
       document.documentElement.dir = direction;
       document.body?.setAttribute("dir", direction);
-    }
-
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-      } catch {
-        // no-op
-      }
     }
   }, [locale]);
 
@@ -37,26 +35,19 @@ export function I18nProvider({ children }) {
       return;
     }
 
-    setLocaleState(normalizedLocale);
-
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(LOCALE_STORAGE_KEY, normalizedLocale);
-      } catch {
-        // no-op
-      }
-
-      window.location.reload();
-    }
-  }, [locale]);
+    i18n.changeLanguage(normalizedLocale);
+  }, [i18n, locale]);
 
   const toggleLocale = useCallback(() => {
     setLocale(locale === "ar" ? "en" : "ar");
   }, [locale, setLocale]);
 
   const t = useCallback(
-    (key, params, fallback) => getLocalizedString(key, { locale, params, fallback }),
-    [locale]
+    (key, params, fallback) => i18nTranslate(key, {
+      ...(params || {}),
+      defaultValue: typeof fallback === "string" ? fallback : key,
+    }),
+    [i18nTranslate]
   );
 
   const value = useMemo(

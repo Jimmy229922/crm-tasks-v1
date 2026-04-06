@@ -1083,31 +1083,29 @@ export const MOCK_TASKS = BASE_TASKS.map((task) => {
   };
 });
 
-const CUSTOM_TASKS_STORAGE_KEY = "crmTasksV1CustomTasks";
+let customTasksStore = [];
 
 function getStoredCustomTasks() {
-  if (typeof window === "undefined") {
-    return [];
+  return customTasksStore;
+}
+
+export function setCustomTasksStore(tasks) {
+  if (!Array.isArray(tasks)) {
+    customTasksStore = [];
+    return;
   }
 
-  try {
-    const rawValue = window.localStorage.getItem(CUSTOM_TASKS_STORAGE_KEY);
-    const parsed = rawValue ? JSON.parse(rawValue) : [];
+  customTasksStore = tasks.filter(
+    (task) =>
+      task
+      && (typeof task.id === "number" || typeof task.id === "string")
+      && task.client
+      && typeof task.client.email === "string"
+  );
+}
 
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (task) =>
-        task
-        && (typeof task.id === "number" || typeof task.id === "string")
-        && task.client
-        && typeof task.client.email === "string"
-    );
-  } catch {
-    return [];
-  }
+export function addCustomTask(task) {
+  setCustomTasksStore([task, ...customTasksStore]);
 }
 
 function getAllTasks() {

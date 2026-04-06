@@ -1,21 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import {
-  MOCK_TASKS,
   PAGE_SIZE_OPTIONS,
-  fetchCrmTasksLocal,
   formatIsoDateForDisplay,
   getStatusClasses,
   getStatusLabel,
-  getTaskTypeKeyFromTask,
   getTaskTypeLabel,
   getTypeClasses,
 } from "../data/mockTasks";
+import {
+  useCreateCrmTask,
+  useCrmAssignees,
+  useCrmTaskList,
+  useCrmTaskTypes,
+  useMarkTaskAsDone,
+} from "../hooks/useCrmTasks";
 import { useI18n } from "../../../i18n/I18nProvider";
 import TaskDetailsPage from "./TaskDetailsPage";
 
 const CLIENT_AVATAR_THEMES = ["bg-indigo-500", "bg-violet-500", "bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-cyan-500"];
-const CUSTOM_TASKS_STORAGE_KEY = "crmTasksV1CustomTasks";
 const ACTIONS_MENU_ESTIMATED_HEIGHT = 176;
 const ACTIONS_MENU_VIEWPORT_PADDING = 16;
 
@@ -29,65 +34,11 @@ const getInitials = (name) => {
   return parts.map((part) => part[0]?.toUpperCase() || "").join("") || "NA";
 };
 
-const formatTaskDateLabel = (date) => {
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const day = String(date.getDate()).padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${month} ${day}, ${year}`;
-};
-
-const readCustomTasksFromStorage = () => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(CUSTOM_TASKS_STORAGE_KEY);
-    const parsed = rawValue ? JSON.parse(rawValue) : [];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (task) =>
-        task
-        && (typeof task.id === "number" || typeof task.id === "string")
-        && task.client
-        && typeof task.client.email === "string"
-        && task.assignee
-        && typeof task.assignee.email === "string"
-    );
-  } catch {
-    return [];
-  }
-};
-
-const writeCustomTasksToStorage = (tasks) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(CUSTOM_TASKS_STORAGE_KEY, JSON.stringify(tasks));
-};
-
 export default function CrmTasksPage() {
   const { t, isRtl } = useI18n();
   const navigate = useNavigate();
-  const [uiState, setUiState] = useState("loading");
-  const [listResponse, setListResponse] = useState({
-    items: [],
-    page: 1,
-    perPage: 20,
-    totalItems: 0,
-    totalPages: 1,
-  });
-  const [reloadTick, setReloadTick] = useState(0);
-  const [customTasks, setCustomTasks] = useState(() => readCustomTasksFromStorage());
-  const [searchInput, setSearchInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedType, setSelectedType] = useState("");
+
+  const [appliedFilters, setAppliedFilters] = useState({ search: "", taskType: "" });
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -95,51 +46,107 @@ export default function CrmTasksPage() {
   const [isActionsMenuOpenUpward, setIsActionsMenuOpenUpward] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [openTaskDetailsId, setOpenTaskDetailsId] = useState(null);
-  const [assignedToEmail, setAssignedToEmail] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
-  const [addTaskError, setAddTaskError] = useState("");
-  const [isAddingTask, setIsAddingTask] = useState(false);
+
+  const listQuery = useCrmTaskList({
+    page: currentPage,
+    perPage: rowsPerPage,
+    search: appliedFilters.search,
+    taskType: appliedFilters.taskType,
+  });
+  const assigneesQuery = useCrmAssignees();
+  const taskTypesQuery = useCrmTaskTypes();
+  const createTaskMutation = useCreateCrmTask();
+  const markTaskAsDoneMutation = useMarkTaskAsDone();
+
+  const uiState = listQuery.isPending ? "loading" : listQuery.isError ? "error" : "success";
+  const listResponse = listQuery.data || {
+    items: [],
+    page: 1,
+    perPage: rowsPerPage,
+    totalItems: 0,
+    totalPages: 1,
+  };
+
+  const totalItems = listResponse.totalItems;
+  const totalPages = listResponse.totalPages;
+  const paginatedTasks = listResponse.items;
+  const assigneeOptions = assigneesQuery.data || [];
+  const taskTypes = taskTypesQuery.data || [];
+  const showEmptyState = uiState === "success" && totalItems === 0;
+
+  const filtersFormik = useFormik({
+    initialValues: {
+      search: "",
+      taskType: "",
+    },
+    onSubmit: (values) => {
+      setAppliedFilters({
+        search: String(values.search || "").trim(),
+        taskType: values.taskType || "",
+      });
+      setCurrentPage(1);
+    },
+  });
+
+  const addTaskValidationSchema = useMemo(
+    () => Yup.object({
+      assignedToEmail: Yup.string().required(t("crmTasksPage.errors.requiredFields")),
+      taskDescription: Yup.string()
+        .trim()
+        .min(6, t("crmTasksPage.errors.requiredFields"))
+        .required(t("crmTasksPage.errors.requiredFields")),
+    }),
+    [t]
+  );
+
+  const addTaskFormik = useFormik({
+    initialValues: {
+      assignedToEmail: "",
+      taskDescription: "",
+    },
+    validationSchema: addTaskValidationSchema,
+    onSubmit: async (values, helpers) => {
+      try {
+        await createTaskMutation.mutateAsync({
+          assignedTo: values.assignedToEmail,
+          description: values.taskDescription,
+        });
+
+        helpers.resetForm();
+        helpers.setStatus(undefined);
+        setIsAddTaskModalOpen(false);
+        setCurrentPage(1);
+      } catch (error) {
+        helpers.setStatus(error?.message || t("crmTasksPage.errors.saveFailed"));
+      }
+    },
+  });
+
+  const closeAddTaskModal = () => {
+    setIsAddTaskModalOpen(false);
+    addTaskFormik.resetForm();
+    addTaskFormik.setStatus(undefined);
+  };
+
+  const openAddTaskModal = () => {
+    setOpenActionsTaskId(null);
+    setIsActionsMenuOpenUpward(false);
+    setOpenTaskDetailsId(null);
+    addTaskFormik.resetForm();
+    addTaskFormik.setStatus(undefined);
+    setIsAddTaskModalOpen(true);
+  };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedType, rowsPerPage]);
+  }, [appliedFilters.search, appliedFilters.taskType, rowsPerPage]);
+
   useEffect(() => {
-    let isActive = true;
+    if (listResponse.page !== currentPage) {
+      setCurrentPage(listResponse.page);
+    }
+  }, [listResponse.page, currentPage]);
 
-    setUiState("loading");
-    setShowErrorToast(false);
-
-    fetchCrmTasksLocal({
-      page: currentPage,
-      perPage: rowsPerPage,
-      search: searchTerm,
-      taskType: selectedType,
-    })
-      .then((response) => {
-        if (!isActive) {
-          return;
-        }
-
-        setListResponse(response);
-        setUiState("success");
-
-        if (response.page !== currentPage) {
-          setCurrentPage(response.page);
-        }
-      })
-      .catch(() => {
-        if (!isActive) {
-          return;
-        }
-
-        setUiState("error");
-        setShowErrorToast(true);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [currentPage, rowsPerPage, searchTerm, selectedType, reloadTick, customTasks]);
   useEffect(() => {
     setShowErrorToast(uiState === "error");
   }, [uiState]);
@@ -178,11 +185,7 @@ export default function CrmTasksPage() {
 
     const handleEscape = (event) => {
       if (event.key === "Escape") {
-        setIsAddTaskModalOpen(false);
-        setAssignedToEmail("");
-        setTaskDescription("");
-        setAddTaskError("");
-        setIsAddingTask(false);
+        closeAddTaskModal();
       }
     };
 
@@ -193,48 +196,15 @@ export default function CrmTasksPage() {
     };
   }, [isAddTaskModalOpen]);
 
-  const allTasks = useMemo(() => [...customTasks, ...MOCK_TASKS], [customTasks]);
-  const taskTypes = useMemo(() => Array.from(new Set(allTasks.map((task) => getTaskTypeKeyFromTask(task)).filter(Boolean))), [allTasks]);
-  const assigneeOptions = useMemo(
-    () => Array.from(new Map(allTasks.map((task) => [task.assignee.email, task.assignee])).values()),
-    [allTasks]
-  );
-
-  const totalItems = listResponse.totalItems;
-  const totalPages = listResponse.totalPages;
-  const paginatedTasks = listResponse.items;
-  const showEmptyState = uiState === "success" && totalItems === 0;
-
   const handleRetry = () => {
     setShowErrorToast(false);
-    setReloadTick((prev) => prev + 1);
-  };
-
-  const handleApplySearch = () => {
-    setSearchTerm(searchInput.trim());
+    listQuery.refetch();
   };
 
   const clearFilters = () => {
-    setSearchInput("");
-    setSearchTerm("");
-    setSelectedType("");
+    filtersFormik.resetForm();
+    setAppliedFilters({ search: "", taskType: "" });
     setCurrentPage(1);
-  };
-
-  const closeAddTaskModal = () => {
-    setIsAddTaskModalOpen(false);
-    setAssignedToEmail("");
-    setTaskDescription("");
-    setAddTaskError("");
-    setIsAddingTask(false);
-  };
-
-  const openAddTaskModal = () => {
-    setOpenActionsTaskId(null);
-    setIsActionsMenuOpenUpward(false);
-    setAddTaskError("");
-    setOpenTaskDetailsId(null);
-    setIsAddTaskModalOpen(true);
   };
 
   const handleToggleTaskActionsMenu = (event, taskId) => {
@@ -254,93 +224,21 @@ export default function CrmTasksPage() {
     setOpenActionsTaskId(taskId);
   };
 
-  const handleAddTask = (event) => {
-    event.preventDefault();
-
-    const normalizedDescription = taskDescription.trim();
-
-    if (!assignedToEmail || !normalizedDescription) {
-      setAddTaskError(t("crmTasksPage.errors.requiredFields"));
-      return;
-    }
-
-    const selectedAssignee = assigneeOptions.find((assignee) => assignee.email === assignedToEmail);
-    if (!selectedAssignee) {
-      setAddTaskError(t("crmTasksPage.errors.invalidAssignee"));
-      return;
-    }
-
-    setIsAddingTask(true);
-    setAddTaskError("");
-
+  const handleMarkAsDone = async (taskId) => {
     try {
-      const maxId = allTasks.reduce((result, task) => {
-        const numericId = Number(task.id);
-        return Number.isFinite(numericId) ? Math.max(result, numericId) : result;
-      }, 0);
-      const nextTaskId = maxId + 1;
-
-      const now = new Date();
-      const dueDate = new Date(now);
-      dueDate.setDate(dueDate.getDate() + 7);
-
-      const createdLabel = formatTaskDateLabel(now);
-      const dueLabel = formatTaskDateLabel(dueDate);
-      const clientName = t("crmTasksPage.defaults.newClient", { id: nextTaskId }, `New Client ${nextTaskId}`);
-
-      const newTask = {
-        id: nextTaskId,
-        client: {
-          name: clientName,
-          email: `client.${nextTaskId}@crm.local`,
-          phone: "N/A",
-          initials: getInitials(clientName),
-          color: CLIENT_AVATAR_THEMES[nextTaskId % CLIENT_AVATAR_THEMES.length],
-          company: "N/A",
-          accountId: `c${nextTaskId}`,
-          country: "N/A",
-          address: "N/A",
-          industry: "N/A",
-          joinedAt: createdLabel,
-        },
-        type: "CustomTask",
-        status: "Pending",
-        priority: "Medium",
-        assignee: {
-          name: selectedAssignee.name,
-          role: selectedAssignee.role || t("crmTasksPage.defaults.teamMember"),
-          initials: selectedAssignee.initials || getInitials(selectedAssignee.name),
-          color: selectedAssignee.color || "bg-indigo-500",
-          email: selectedAssignee.email,
-        },
-        created: createdLabel,
-        due: dueLabel,
-        isOverdue: false,
-        description: normalizedDescription,
-        timeline: [
-          {
-            title: "Task created",
-            at: createdLabel,
-            note: normalizedDescription,
-          },
-        ],
-        actions: ["Open Task Details"],
-      };
-
-      setCustomTasks((previousTasks) => {
-        const updatedTasks = [newTask, ...previousTasks];
-        writeCustomTasksToStorage(updatedTasks);
-        return updatedTasks;
-      });
-
-      setUiState("success");
-      setCurrentPage(1);
-      closeAddTaskModal();
+      await markTaskAsDoneMutation.mutateAsync(taskId);
     } catch {
-      setAddTaskError(t("crmTasksPage.errors.saveFailed"));
-      setIsAddingTask(false);
+      setShowErrorToast(true);
+    } finally {
+      setOpenActionsTaskId(null);
+      setIsActionsMenuOpenUpward(false);
     }
   };
+
+  const addTaskError = addTaskFormik.status
+    || (addTaskFormik.submitCount > 0
+      ? addTaskFormik.errors.assignedToEmail || addTaskFormik.errors.taskDescription
+      : "");
 
   return (
     <div className="min-h-screen bg-[#151521] py-8 px-4 sm:px-6 lg:px-8 text-slate-100">
@@ -375,7 +273,7 @@ export default function CrmTasksPage() {
             <h2 className="text-2xl font-bold text-white leading-tight">{t("crmTasksPage.allTasks")}</h2>
             <p className="text-sm text-slate-300 mb-5">{t("crmTasksPage.tasksFound", { count: totalItems }, `${totalItems} tasks found`)}</p>
 
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            <form onSubmit={filtersFormik.handleSubmit} className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
               <div className="relative flex-1 w-full">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -388,23 +286,15 @@ export default function CrmTasksPage() {
                   </svg>
                 </div>
                 <input
-                  value={searchInput}
-                  onChange={(event) => {
-                    setSearchInput(event.target.value);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleApplySearch();
-                    }
-                  }}
+                  name="search"
+                  value={filtersFormik.values.search}
+                  onChange={filtersFormik.handleChange}
                   type="text"
                   className="block w-full pl-11 pr-32 py-3 border border-slate-700 rounded-xl bg-[#151521] hover:bg-[#1a1a27] focus:bg-[#1a1a27] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base text-slate-100 transition-colors"
                   placeholder={t("crmTasksPage.searchPlaceholder")}
                 />
                 <button
-                  type="button"
-                  onClick={handleApplySearch}
+                  type="submit"
                   className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? "left-2" : "right-2"} inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,14 +305,23 @@ export default function CrmTasksPage() {
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  <span>Search</span>
+                  <span>{t("crmTasksPage.buttons.search", null, "Search")}</span>
                 </button>
               </div>
 
               <div className="flex gap-3 w-full lg:w-auto">
                 <select
-                  value={selectedType}
-                  onChange={(event) => setSelectedType(event.target.value)}
+                  name="taskType"
+                  value={filtersFormik.values.taskType}
+                  onChange={(event) => {
+                    const nextType = event.target.value;
+                    filtersFormik.setFieldValue("taskType", nextType);
+                    setAppliedFilters({
+                      search: String(filtersFormik.values.search || "").trim(),
+                      taskType: nextType,
+                    });
+                    setCurrentPage(1);
+                  }}
                   className="block w-full lg:w-48 pl-4 pr-10 py-3 text-base border border-slate-700 rounded-xl bg-[#151521] text-slate-200 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">{t("crmTasksPage.taskTypeFilter")}</option>
@@ -433,7 +332,7 @@ export default function CrmTasksPage() {
                   ))}
                 </select>
               </div>
-            </div>
+            </form>
           </div>
 
           {showEmptyState ? (
@@ -538,9 +437,8 @@ export default function CrmTasksPage() {
                     paginatedTasks.map((task, index) => {
                       const statusClasses = getStatusClasses(task.status);
                       const statusLabel = getStatusLabel(task.status);
-                      const taskTypeKey = task.taskType;
-                      const taskTypeLabel = getTaskTypeLabel(taskTypeKey);
-                      const typeClasses = getTypeClasses(taskTypeKey);
+                      const taskTypeLabel = getTaskTypeLabel(task.taskType);
+                      const typeClasses = getTypeClasses(task.taskType);
                       const isOverdue = task.status === "OVERDUE";
                       const clientInitials = getInitials(task.client.name);
                       const clientAvatarClass = CLIENT_AVATAR_THEMES[index % CLIENT_AVATAR_THEMES.length];
@@ -684,10 +582,7 @@ export default function CrmTasksPage() {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setOpenActionsTaskId(null);
-                                      setIsActionsMenuOpenUpward(false);
-                                    }}
+                                    onClick={() => handleMarkAsDone(task.id)}
                                     className="block w-full text-start px-4 py-2.5 text-sm text-emerald-300 hover:bg-emerald-500/15"
                                   >
                                     {t("crmTasksPage.buttons.markAsDone")}
@@ -763,7 +658,7 @@ export default function CrmTasksPage() {
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <button
             type="button"
-              aria-label={t("crmTasksPage.addTaskModal.closeAria")}
+            aria-label={t("crmTasksPage.addTaskModal.closeAria")}
             onClick={closeAddTaskModal}
             className="absolute inset-0 bg-black/65 backdrop-blur-sm"
           />
@@ -780,7 +675,7 @@ export default function CrmTasksPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddTask} className="px-6 py-5 space-y-5">
+            <form onSubmit={addTaskFormik.handleSubmit} className="px-6 py-5 space-y-5">
               {addTaskError ? (
                 <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-2.5 text-sm text-rose-200">
                   {addTaskError}
@@ -790,8 +685,10 @@ export default function CrmTasksPage() {
               <div>
                 <label className="block text-sm font-semibold text-slate-200 mb-2">{t("crmTasksPage.addTaskModal.assignedTo")}</label>
                 <select
-                  value={assignedToEmail}
-                  onChange={(event) => setAssignedToEmail(event.target.value)}
+                  name="assignedToEmail"
+                  value={addTaskFormik.values.assignedToEmail}
+                  onChange={addTaskFormik.handleChange}
+                  onBlur={addTaskFormik.handleBlur}
                   className="block w-full px-4 py-3 text-base border border-slate-700 rounded-xl bg-[#151521] text-slate-200 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">{t("crmTasksPage.addTaskModal.selectAssignee")}</option>
@@ -806,8 +703,10 @@ export default function CrmTasksPage() {
               <div>
                 <label className="block text-sm font-semibold text-slate-200 mb-2">{t("crmTasksPage.addTaskModal.description")}</label>
                 <textarea
-                  value={taskDescription}
-                  onChange={(event) => setTaskDescription(event.target.value)}
+                  name="taskDescription"
+                  value={addTaskFormik.values.taskDescription}
+                  onChange={addTaskFormik.handleChange}
+                  onBlur={addTaskFormik.handleBlur}
                   rows={5}
                   className="block w-full px-4 py-3 text-base border border-slate-700 rounded-xl bg-[#151521] text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   placeholder={t("crmTasksPage.addTaskModal.descriptionPlaceholder")}
@@ -824,10 +723,12 @@ export default function CrmTasksPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isAddingTask}
+                  disabled={createTaskMutation.isPending || addTaskFormik.isSubmitting}
                   className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isAddingTask ? t("crmTasksPage.addTaskModal.saving") : t("crmTasksPage.addTaskModal.addTask")}
+                  {createTaskMutation.isPending || addTaskFormik.isSubmitting
+                    ? t("crmTasksPage.addTaskModal.saving")
+                    : t("crmTasksPage.addTaskModal.addTask")}
                 </button>
               </div>
             </form>
@@ -850,5 +751,3 @@ export default function CrmTasksPage() {
     </div>
   );
 }
-
-
