@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CRM_TASK_STATUS_ENUM_OPTIONS,
   MOCK_TASKS,
   PAGE_SIZE_OPTIONS,
   fetchCrmTasksLocal,
   formatIsoDateForDisplay,
-  getMetrics,
   getStatusClasses,
   getStatusLabel,
   getTaskTypeKeyFromTask,
@@ -14,72 +12,12 @@ import {
   getTypeClasses,
 } from "../data/mockTasks";
 import { useI18n } from "../../../i18n/I18nProvider";
+import TaskDetailsPage from "./TaskDetailsPage";
 
-const METRIC_THEMES = {
-  "Total Tasks": {
-    card: "border-slate-600/70 bg-gradient-to-br from-slate-800/70 via-slate-900/55 to-slate-950/60",
-    label: "text-slate-200",
-    iconWrap: "border-slate-500/40 bg-slate-700/35 text-slate-200",
-    progress: "bg-slate-300",
-    glow: "bg-slate-400/25",
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    ),
-  },
-  "In Progress": {
-    card: "border-blue-500/35 bg-gradient-to-br from-blue-600/15 via-[#1a2238] to-[#131a2b]",
-    label: "text-blue-200",
-    iconWrap: "border-blue-400/40 bg-blue-500/15 text-blue-200",
-    progress: "bg-blue-400",
-    glow: "bg-blue-500/30",
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-        <circle cx="12" cy="12" r="8" />
-      </svg>
-    ),
-  },
-  Overdue: {
-    card: "border-rose-500/35 bg-gradient-to-br from-rose-600/15 via-[#291820] to-[#19131d]",
-    label: "text-rose-200",
-    iconWrap: "border-rose-400/40 bg-rose-500/15 text-rose-200",
-    progress: "bg-rose-400",
-    glow: "bg-rose-500/30",
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01" />
-        <circle cx="12" cy="12" r="8" />
-      </svg>
-    ),
-  },
-  Completed: {
-    card: "border-emerald-500/35 bg-gradient-to-br from-emerald-600/15 via-[#142420] to-[#131d1a]",
-    label: "text-emerald-200",
-    iconWrap: "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
-    progress: "bg-emerald-400",
-    glow: "bg-emerald-500/30",
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12.5l2.6 2.6L16 9.7" />
-        <circle cx="12" cy="12" r="8" />
-      </svg>
-    ),
-  },
-};
-
-const DEFAULT_METRIC_THEME = METRIC_THEMES["Total Tasks"];
 const CLIENT_AVATAR_THEMES = ["bg-indigo-500", "bg-violet-500", "bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-cyan-500"];
 const CUSTOM_TASKS_STORAGE_KEY = "crmTasksV1CustomTasks";
 const ACTIONS_MENU_ESTIMATED_HEIGHT = 176;
 const ACTIONS_MENU_VIEWPORT_PADDING = 16;
-const METRIC_LABEL_KEYS = {
-  "Total Tasks": "crmTasksPage.metrics.totalTasks",
-  "In Progress": "crmTasksPage.metrics.inProgress",
-  Overdue: "crmTasksPage.metrics.overdue",
-  Completed: "crmTasksPage.metrics.completed",
-};
 
 const getInitials = (name) => {
   const parts = String(name || "")
@@ -147,15 +85,16 @@ export default function CrmTasksPage() {
   });
   const [reloadTick, setReloadTick] = useState(0);
   const [customTasks, setCustomTasks] = useState(() => readCustomTasksFromStorage());
+  const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [openActionsTaskId, setOpenActionsTaskId] = useState(null);
   const [isActionsMenuOpenUpward, setIsActionsMenuOpenUpward] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [openTaskDetailsId, setOpenTaskDetailsId] = useState(null);
   const [assignedToEmail, setAssignedToEmail] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [addTaskError, setAddTaskError] = useState("");
@@ -163,8 +102,7 @@ export default function CrmTasksPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedType, selectedStatus, rowsPerPage]);
-
+  }, [searchTerm, selectedType, rowsPerPage]);
   useEffect(() => {
     let isActive = true;
 
@@ -175,7 +113,6 @@ export default function CrmTasksPage() {
       page: currentPage,
       perPage: rowsPerPage,
       search: searchTerm,
-      status: selectedStatus,
       taskType: selectedType,
     })
       .then((response) => {
@@ -202,8 +139,7 @@ export default function CrmTasksPage() {
     return () => {
       isActive = false;
     };
-  }, [currentPage, rowsPerPage, searchTerm, selectedStatus, selectedType, reloadTick, customTasks]);
-
+  }, [currentPage, rowsPerPage, searchTerm, selectedType, reloadTick, customTasks]);
   useEffect(() => {
     setShowErrorToast(uiState === "error");
   }, [uiState]);
@@ -258,11 +194,7 @@ export default function CrmTasksPage() {
   }, [isAddTaskModalOpen]);
 
   const allTasks = useMemo(() => [...customTasks, ...MOCK_TASKS], [customTasks]);
-
-  const metrics = useMemo(() => getMetrics(allTasks), [allTasks]);
-  const maxMetricCount = useMemo(() => Math.max(...metrics.map((metric) => metric.count), 1), [metrics]);
   const taskTypes = useMemo(() => Array.from(new Set(allTasks.map((task) => getTaskTypeKeyFromTask(task)).filter(Boolean))), [allTasks]);
-  const statuses = useMemo(() => CRM_TASK_STATUS_ENUM_OPTIONS, []);
   const assigneeOptions = useMemo(
     () => Array.from(new Map(allTasks.map((task) => [task.assignee.email, task.assignee])).values()),
     [allTasks]
@@ -278,10 +210,14 @@ export default function CrmTasksPage() {
     setReloadTick((prev) => prev + 1);
   };
 
+  const handleApplySearch = () => {
+    setSearchTerm(searchInput.trim());
+  };
+
   const clearFilters = () => {
+    setSearchInput("");
     setSearchTerm("");
     setSelectedType("");
-    setSelectedStatus("");
     setCurrentPage(1);
   };
 
@@ -297,6 +233,7 @@ export default function CrmTasksPage() {
     setOpenActionsTaskId(null);
     setIsActionsMenuOpenUpward(false);
     setAddTaskError("");
+    setOpenTaskDetailsId(null);
     setIsAddTaskModalOpen(true);
   };
 
@@ -433,43 +370,6 @@ export default function CrmTasksPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {metrics.map((metric) => {
-            const theme = METRIC_THEMES[metric.label] || DEFAULT_METRIC_THEME;
-            const fillWidth = Math.max(14, Math.round((metric.count / maxMetricCount) * 100));
-            const metricLabel = t(METRIC_LABEL_KEYS[metric.label] || "", null, metric.label);
-
-            return (
-              <div
-                key={metric.label}
-                className={`relative overflow-hidden rounded-xl p-3.5 border shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${theme.card}`}
-              >
-                <span className={`pointer-events-none absolute -top-7 -right-7 w-20 h-20 rounded-full blur-2xl ${theme.glow}`}></span>
-                <div className="relative flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${metric.color}`}></span>
-                      <span className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${theme.label}`}>{metricLabel}</span>
-                    </div>
-                    <div className="mt-2 inline-flex items-end gap-1.5">
-                      <span className="text-2xl font-semibold text-white leading-none">{metric.count}</span>
-                      <span className="text-[11px] text-slate-400 pb-0.5">{t("crmTasksPage.tasksSuffix")}</span>
-                    </div>
-                  </div>
-                  <div
-                    className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-[0_6px_20px_rgba(0,0,0,0.25)] ${theme.iconWrap}`}
-                  >
-                    {theme.icon}
-                  </div>
-                </div>
-                <div className="relative mt-3 h-1.5 rounded-full bg-slate-900/70 overflow-hidden">
-                  <div className={`h-full rounded-full ${theme.progress}`} style={{ width: `${fillWidth}%` }}></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         <div className="bg-[#1e1e2d] rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
           <div className="p-6 pb-4 border-b border-slate-700">
             <h2 className="text-2xl font-bold text-white leading-tight">{t("crmTasksPage.allTasks")}</h2>
@@ -488,14 +388,35 @@ export default function CrmTasksPage() {
                   </svg>
                 </div>
                 <input
-                  value={searchTerm}
+                  value={searchInput}
                   onChange={(event) => {
-                    setSearchTerm(event.target.value);
+                    setSearchInput(event.target.value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleApplySearch();
+                    }
                   }}
                   type="text"
-                  className="block w-full pl-11 pr-4 py-3 border border-slate-700 rounded-xl bg-[#151521] hover:bg-[#1a1a27] focus:bg-[#1a1a27] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base text-slate-100 transition-colors"
+                  className="block w-full pl-11 pr-32 py-3 border border-slate-700 rounded-xl bg-[#151521] hover:bg-[#1a1a27] focus:bg-[#1a1a27] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base text-slate-100 transition-colors"
                   placeholder={t("crmTasksPage.searchPlaceholder")}
                 />
+                <button
+                  type="button"
+                  onClick={handleApplySearch}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? "left-2" : "right-2"} inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <span>Search</span>
+                </button>
               </div>
 
               <div className="flex gap-3 w-full lg:w-auto">
@@ -508,19 +429,6 @@ export default function CrmTasksPage() {
                   {taskTypes.map((typeKey) => (
                     <option key={typeKey} value={typeKey}>
                       {getTaskTypeLabel(typeKey)}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedStatus}
-                  onChange={(event) => setSelectedStatus(event.target.value)}
-                  className="block w-full lg:w-44 pl-4 pr-10 py-3 text-base border border-slate-700 rounded-xl bg-[#151521] text-slate-200 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">{t("crmTasksPage.statusFilter")}</option>
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {getStatusLabel(status)}
                     </option>
                   ))}
                 </select>
@@ -697,7 +605,7 @@ export default function CrmTasksPage() {
                                   event.stopPropagation();
                                   setOpenActionsTaskId(null);
                                   setIsActionsMenuOpenUpward(false);
-                                  navigate(`/crm/tasks-v1/profile/${task.id}`);
+                                  navigate(`/crm/tasks-v1/profile/${task.client.id}`);
                                 }}
                                 className="text-slate-300 hover:text-cyan-300 transition-colors p-2 rounded-lg hover:bg-slate-700/60"
                               >
@@ -718,7 +626,7 @@ export default function CrmTasksPage() {
                                   event.stopPropagation();
                                   setOpenActionsTaskId(null);
                                   setIsActionsMenuOpenUpward(false);
-                                  navigate(`/crm/tasks-v1/task/${task.id}`);
+                                  setOpenTaskDetailsId(task.id);
                                 }}
                                 className="text-slate-300 hover:text-emerald-300 transition-colors p-2 rounded-lg hover:bg-slate-700/60"
                               >
@@ -757,7 +665,7 @@ export default function CrmTasksPage() {
                                     onClick={() => {
                                       setOpenActionsTaskId(null);
                                       setIsActionsMenuOpenUpward(false);
-                                      navigate(`/crm/tasks-v1/task/${task.id}`);
+                                      setOpenTaskDetailsId(task.id);
                                     }}
                                     className="block w-full text-start px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-700/45"
                                   >
@@ -768,7 +676,7 @@ export default function CrmTasksPage() {
                                     onClick={() => {
                                       setOpenActionsTaskId(null);
                                       setIsActionsMenuOpenUpward(false);
-                                      navigate(`/crm/tasks-v1/profile/${task.id}`);
+                                      navigate(`/crm/tasks-v1/profile/${task.client.id}`);
                                     }}
                                     className="block w-full text-start px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-700/45"
                                   >
@@ -838,6 +746,18 @@ export default function CrmTasksPage() {
           ) : null}
         </div>
       </div>
+
+      {openTaskDetailsId ? (
+        <TaskDetailsPage
+          taskId={openTaskDetailsId}
+          isModal
+          onClose={() => setOpenTaskDetailsId(null)}
+          onOpenClientProfile={(clientId) => {
+            setOpenTaskDetailsId(null);
+            navigate(`/crm/tasks-v1/profile/${clientId}`);
+          }}
+        />
+      ) : null}
 
       {isAddTaskModalOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -930,3 +850,5 @@ export default function CrmTasksPage() {
     </div>
   );
 }
+
+

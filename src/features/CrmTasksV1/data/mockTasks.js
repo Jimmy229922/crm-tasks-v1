@@ -1181,6 +1181,7 @@ function mapTaskToListItem(task) {
   return {
     id: task.id,
     client: {
+      id: task.client?.accountId || task.client?.id || "",
       name: task.client?.name || "N/A",
       email: task.client?.email || "N/A",
     },
@@ -1206,7 +1207,7 @@ function filterListItems(items, search, status, taskType) {
     const byStatus = normalizedStatus ? item.status === normalizedStatus : true;
     const byType = normalizedType ? item.taskType === normalizedType : true;
 
-    const searchBlob = `${item.client.name} ${item.client.email} ${item.assignee.name} ${item.assignee.role} ${item.taskType}`.toLowerCase();
+    const searchBlob = `${item.client.name} ${item.client.email}`.toLowerCase();
     const bySearch = normalizedSearch ? searchBlob.includes(normalizedSearch) : true;
 
     return byStatus && byType && bySearch;
@@ -1370,6 +1371,15 @@ export function filterTasks(tasks, searchTerm, selectedType, selectedStatus) {
 
 export function getTaskById(taskId) {
   return getAllTasks().find((task) => String(task.id) === String(taskId));
+}
+
+export function getTasksByClientId(clientId) {
+  return getAllTasks().filter((task) => String(task.client?.accountId) === String(clientId));
+}
+
+export function getClientById(clientId) {
+  const task = getAllTasks().find((item) => String(item.client?.accountId) === String(clientId));
+  return task?.client || null;
 }
 
 export function getTasksByClientEmail(email) {

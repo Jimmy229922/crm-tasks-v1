@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  getClientById,
   getStatusClasses,
   getStatusLabel,
-  getTaskById,
   getTaskTypeLabel,
-  getTasksByClientEmail,
+  getTasksByClientId,
   getTypeClasses,
 } from "../data/mockTasks";
 import { useI18n } from "../../../i18n/I18nProvider";
+import TaskDetailsPage from "./TaskDetailsPage";
 
 export default function TaskProfilePage() {
   const navigate = useNavigate();
-  const { taskId } = useParams();
+  const { clientId } = useParams();
   const { t, locale } = useI18n();
   const [activeTab, setActiveTab] = useState("overview");
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [openTaskDetailsId, setOpenTaskDetailsId] = useState(null);
   const actionMenuRef = useRef(null);
 
   const formatDate = (value, options) => {
@@ -61,7 +63,8 @@ export default function TaskProfilePage() {
   useEffect(() => {
     setActiveTab("overview");
     setIsActionMenuOpen(false);
-  }, [taskId]);
+    setOpenTaskDetailsId(null);
+  }, [clientId]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -86,13 +89,9 @@ export default function TaskProfilePage() {
     };
   }, []);
 
-  const task = useMemo(() => getTaskById(taskId), [taskId]);
-  const clientTasks = useMemo(() => {
-    if (!task) {
-      return [];
-    }
-    return getTasksByClientEmail(task.client.email);
-  }, [task]);
+  const client = useMemo(() => getClientById(clientId), [clientId]);
+  const clientTasks = useMemo(() => getTasksByClientId(clientId), [clientId]);
+  const task = useMemo(() => clientTasks[0] || null, [clientTasks]);
 
   const completedTasks = clientTasks.filter((item) => item.status === "Done").length;
   const inProgressTasks = clientTasks.filter((item) => item.status === "In Progress").length;
@@ -142,26 +141,26 @@ export default function TaskProfilePage() {
     return [
       {
         id: "doc-1",
-        name: `${task.client.accountId}-KYC-Form.pdf`,
+        name: `${client.accountId}-KYC-Form.pdf`,
         updatedAt: "Apr 02, 2026",
         type: "PDF",
       },
       {
         id: "doc-2",
-        name: `${task.client.accountId}-Contract-v2.docx`,
+        name: `${client.accountId}-Contract-v2.docx`,
         updatedAt: "Apr 04, 2026",
         type: "DOCX",
       },
       {
         id: "doc-3",
-        name: `${task.client.accountId}-Implementation-Plan.xlsx`,
+        name: `${client.accountId}-Implementation-Plan.xlsx`,
         updatedAt: "Apr 05, 2026",
         type: "XLSX",
       },
     ];
-  }, [task]);
+  }, [client]);
 
-  if (!task) {
+  if (!client) {
     return (
       <div className="min-h-screen bg-[#151521] py-10 px-4 sm:px-6 lg:px-8 text-slate-100">
         <div className="max-w-screen-xl mx-auto rounded-2xl border border-slate-700 bg-[#1e1e2d] p-8 text-center shadow-sm">
@@ -197,7 +196,7 @@ export default function TaskProfilePage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigate(`/crm/tasks-v1/task/${task.id}`)}
+              onClick={() => task && setOpenTaskDetailsId(task.id)}
               className="px-4 py-2 rounded-lg border border-slate-600 bg-[#151521] text-slate-200 hover:bg-slate-700/40 text-sm font-semibold"
             >
               {t("taskProfilePage.openTaskDetails")}
@@ -265,16 +264,16 @@ export default function TaskProfilePage() {
 
           <div className="px-6 pb-6">
             <div className="relative z-10 -mt-10 md:-mt-11 flex flex-col md:flex-row md:items-center gap-4">
-              <div className={`w-24 h-24 rounded-full border-4 border-[#1e1e2d] shadow-lg flex items-center justify-center text-4xl font-semibold text-white ${task.client.color}`}>
-                {task.client.initials}
+              <div className={`w-24 h-24 rounded-full border-4 border-[#1e1e2d] shadow-lg flex items-center justify-center text-4xl font-semibold text-white ${client.color}`}>
+                {client.initials}
               </div>
 
               <div className="pt-1 md:pt-2">
-                <h2 className="text-4xl md:text-5xl leading-tight font-bold text-white">{task.client.name}</h2>
+                <h2 className="text-4xl md:text-5xl leading-tight font-bold text-white">{client.name}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-300">
                   <span>{t("taskProfilePage.headerBadges.corporateClient")}</span>
                   <span>•</span>
-                  <span>{task.client.country}</span>
+                  <span>{client.country}</span>
                   <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200 text-xs font-semibold border border-blue-500/30">
                     {t("taskProfilePage.headerBadges.keyAccount")}
                   </span>
@@ -292,23 +291,23 @@ export default function TaskProfilePage() {
               <div className="space-y-5">
                 <div className="rounded-xl bg-[#151521] border border-slate-700 p-4">
                   <p className="text-xs text-slate-400 font-semibold">{t("taskProfilePage.emailAddress")}</p>
-                  <p className="text-base text-blue-300 font-medium mt-1 break-all">{task.client.email}</p>
+                  <p className="text-base text-blue-300 font-medium mt-1 break-all">{client.email}</p>
                 </div>
 
                 <div className="rounded-xl bg-[#151521] border border-slate-700 p-4">
                   <p className="text-xs text-slate-400 font-semibold">{t("taskProfilePage.phoneNumber")}</p>
-                  <p className="text-base text-slate-100 font-medium mt-1">{task.client.phone}</p>
+                  <p className="text-base text-slate-100 font-medium mt-1">{client.phone}</p>
                 </div>
               </div>
 
               <div className="mt-5 pt-5 border-t border-slate-700 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-slate-400 font-semibold">{t("common.clientId")}</p>
-                  <p className="text-base text-slate-100 mt-1">{task.client.accountId}</p>
+                  <p className="text-base text-slate-100 mt-1">{client.accountId}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 font-semibold">{t("common.joined")}</p>
-                  <p className="text-base text-slate-100 mt-1">{formatMonthYearDate(task.client.joinedAt)}</p>
+                  <p className="text-base text-slate-100 mt-1">{formatMonthYearDate(client.joinedAt)}</p>
                 </div>
               </div>
             </section>
@@ -423,7 +422,7 @@ export default function TaskProfilePage() {
                           <td className="px-5 py-3 text-sm text-white font-semibold">
                             <button
                               type="button"
-                              onClick={() => navigate(`/crm/tasks-v1/task/${item.id}`)}
+                              onClick={() => setOpenTaskDetailsId(item.id)}
                               className="text-left hover:text-cyan-300 transition-colors"
                             >
                               {t("taskProfilePage.taskRowTitle", { id: item.id }, `Task #${item.id}`)}
@@ -468,6 +467,18 @@ export default function TaskProfilePage() {
           </div>
         </div>
       </main>
+
+      {openTaskDetailsId ? (
+        <TaskDetailsPage
+          taskId={openTaskDetailsId}
+          isModal
+          onClose={() => setOpenTaskDetailsId(null)}
+          onOpenClientProfile={(nextClientId) => {
+            setOpenTaskDetailsId(null);
+            navigate(`/crm/tasks-v1/profile/${nextClientId}`);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

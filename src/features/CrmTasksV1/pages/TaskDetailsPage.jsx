@@ -4,6 +4,7 @@ import {
   getStatusClasses,
   getStatusLabel,
   getTaskById,
+  getTaskTypeKeyFromTask,
   getTaskTypeLabel,
   getTypeClasses,
 } from "../data/mockTasks";
@@ -157,9 +158,10 @@ function InfoTable({ rows }) {
   );
 }
 
-export default function TaskDetailsPage() {
+export default function TaskDetailsPage({ taskId: taskIdProp = null, isModal = false, onClose, onOpenClientProfile }) {
   const navigate = useNavigate();
-  const { taskId } = useParams();
+  const { taskId: routeTaskId } = useParams();
+  const taskId = taskIdProp || routeTaskId;
   const { t, locale } = useI18n();
 
   const task = useMemo(() => getTaskById(taskId), [taskId]);
@@ -243,6 +245,15 @@ export default function TaskDetailsPage() {
     };
   }, [focusNoteComposer, task]);
 
+  const handleBack = () => {
+    if (isModal && typeof onClose === "function") {
+      onClose();
+      return;
+    }
+
+    navigate("/crm/tasks-v1/risk-management");
+  };
+
   if (!task) {
     return (
       <div className="min-h-screen bg-[#101629] py-10 px-4 sm:px-6 lg:px-8 text-slate-100">
@@ -251,7 +262,7 @@ export default function TaskDetailsPage() {
           <p className="text-slate-300 mt-2">{t("taskDetailsPage.notFoundDescription")}</p>
           <button
             type="button"
-            onClick={() => navigate("/crm/tasks-v1/risk-management")}
+            onClick={handleBack}
             className="mt-5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
           >
             {t("taskDetailsPage.backToTaskManagement")}
@@ -326,6 +337,48 @@ export default function TaskDetailsPage() {
     { id: "comment", label: t("taskDetailsPage.comment"), value: comment },
   ];
 
+  const taskTypeKey = getTaskTypeKeyFromTask(task);
+
+  const financialTaskTypes = new Set([
+    "WithdrawalRequests",
+    "ElectronicDeposits",
+    "FundsTransfers",
+    "InvestmentDeposits",
+    "InvestmentWithdrawals",
+    "LocalDeposit",
+    "LocalWithdrawal",
+    "TypeWithdrawalFromRequest",
+  ]);
+
+  const supportTaskTypes = new Set([
+    "Technical Support",
+    "Support",
+    "Escalation",
+  ]);
+
+  const typeSpecificSectionTitle = financialTaskTypes.has(taskTypeKey)
+    ? t("taskDetailsPage.financialData")
+    : supportTaskTypes.has(taskTypeKey)
+      ? t("taskDetailsPage.relatedData")
+      : t("taskDetailsPage.recordSummary");
+
+  const typeSpecificRows = financialTaskTypes.has(taskTypeKey)
+    ? [
+      { id: "financial-status", label: t("common.status"), value: taskStatusLabel },
+      { id: "financial-method", label: t("taskDetailsPage.paymentMethod"), value: paymentMethod },
+      { id: "financial-reference", label: t("taskDetailsPage.transactionId"), value: transactionId },
+    ]
+    : supportTaskTypes.has(taskTypeKey)
+      ? [
+        { id: "support-assignee", label: t("taskDetailsPage.assignedTo"), value: task.assignee?.name || fallbackValue },
+        { id: "support-action", label: t("taskDetailsPage.actionTaken"), value: actionTaken },
+        { id: "support-comment", label: t("taskDetailsPage.comment"), value: comment },
+      ]
+      : [
+        { id: "summary-created", label: t("common.created"), value: createdAt },
+        { id: "summary-due", label: t("taskDetailsPage.dueOn"), value: dueOn },
+        { id: "summary-lifetime", label: t("taskDetailsPage.lifetime"), value: lifetime },
+      ];
   const handleAddNote = () => {
     const value = internalNote.trim();
 
@@ -351,9 +404,33 @@ export default function TaskDetailsPage() {
     setNotesRows((previous) => previous.filter((item) => item.id !== noteId));
   };
 
+  const handleOpenClientProfile = () => {
+    const nextClientId = task.client?.accountId;
+
+    if (!nextClientId) {
+      return;
+    }
+
+    if (isModal && typeof onOpenClientProfile === "function") {
+      onOpenClientProfile(nextClientId);
+      return;
+    }
+
+    navigate(`/crm/tasks-v1/profile/${nextClientId}`);
+  };
+
   return (
-    <div className="min-h-screen bg-[#101629] py-8 px-4 sm:px-6 lg:px-8 text-slate-100">
-      <div className="max-w-[1320px] mx-auto space-y-5">
+    <div className={isModal ? "fixed inset-0 z-[80] flex items-center justify-center p-4" : "min-h-screen bg-[#101629] py-8 px-4 sm:px-6 lg:px-8 text-slate-100"}>
+      {isModal ? (
+        <button
+          type="button"
+          aria-label={t("common.cancel")}
+          onClick={handleBack}
+          className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+        />
+      ) : null}
+
+      <div className={isModal ? "relative w-full max-w-[1320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-[#101629] py-8 px-4 sm:px-6 lg:px-8 text-slate-100 space-y-5" : "max-w-[1320px] mx-auto space-y-5"}>
         <section className="rounded-2xl border border-slate-700/70 bg-[#1b2235] p-4 sm:p-6 shadow-lg shadow-slate-950/25">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -364,7 +441,7 @@ export default function TaskDetailsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => navigate(`/crm/tasks-v1/profile/${task.id}`)}
+                onClick={handleOpenClientProfile}
                 className="px-4 py-2 rounded-lg border border-slate-600 bg-[#121a2e] text-slate-200 hover:bg-slate-700/40 text-sm font-semibold"
               >
                 {t("taskDetailsPage.openClientProfile")}
@@ -372,7 +449,7 @@ export default function TaskDetailsPage() {
               <button
                 type="button"
                 aria-label={t("taskDetailsPage.backToTaskManagement")}
-                onClick={() => navigate("/crm/tasks-v1/risk-management")}
+                onClick={handleBack}
                 className="h-10 w-10 rounded-lg border border-slate-600 bg-[#121a2e] text-slate-200 hover:bg-slate-700/40 flex items-center justify-center"
               >
                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -402,6 +479,22 @@ export default function TaskDetailsPage() {
             <table className="w-full text-sm">
               <tbody>
                 {accountRows.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-700/70 last:border-b-0">
+                    <th className="w-[220px] bg-[#1a243a] px-4 py-3 text-start text-slate-300 font-semibold">{row.label}</th>
+                    <td className="bg-[#131b2e] px-4 py-3 text-slate-100 break-words">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-700/70 bg-[#1b2235] p-4 sm:p-6 shadow-lg shadow-slate-950/25">
+          <h2 className="text-lg font-semibold text-white">{typeSpecificSectionTitle}</h2>
+          <div className="mt-3 overflow-hidden rounded-xl border border-slate-700/70">
+            <table className="w-full text-sm">
+              <tbody>
+                {typeSpecificRows.map((row) => (
                   <tr key={row.id} className="border-b border-slate-700/70 last:border-b-0">
                     <th className="w-[220px] bg-[#1a243a] px-4 py-3 text-start text-slate-300 font-semibold">{row.label}</th>
                     <td className="bg-[#131b2e] px-4 py-3 text-slate-100 break-words">{row.value}</td>
@@ -446,7 +539,7 @@ export default function TaskDetailsPage() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => navigate(`/crm/tasks-v1/profile/${task.id}`)}
+                            onClick={handleOpenClientProfile}
                             className="px-3 py-1.5 rounded-lg border border-slate-500 bg-[#1a243a] text-slate-200 hover:bg-slate-700/40 text-xs font-semibold"
                           >
                             {t("taskDetailsPage.noteActionOpenProfile")}

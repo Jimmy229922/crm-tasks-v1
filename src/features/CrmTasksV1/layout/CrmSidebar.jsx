@@ -145,7 +145,6 @@ export default function CrmSidebar({
   const isHomeActive = location.pathname.startsWith("/crm/tasks-v1/home");
   const isRiskManagementActive = !isHomeActive && (
     location.pathname.startsWith("/crm/tasks-v1/risk-management")
-    || location.pathname.startsWith("/crm/tasks-v1/task/")
     || location.pathname.startsWith("/crm/tasks-v1/profile/")
   );
   const primaryItems = SIDEBAR_MENU_ITEMS.filter((item) => item.id !== "logout");
