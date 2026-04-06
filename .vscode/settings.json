@@ -1,0 +1,17 @@
+{
+  "css.lint.unknownAtRules": "ignore",
+  "css.lint.vendorPrefix": "ignore",
+  "css.lint.propertyIgnoredDueToDisplay": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "scss.lint.vendorPrefix": "ignore",
+  "scss.lint.propertyIgnoredDueToDisplay": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  "less.lint.vendorPrefix": "ignore",
+  "less.lint.propertyIgnoredDueToDisplay": "ignore",
+  "files.exclude": {
+    "**/dist": true
+  },
+  "search.exclude": {
+    "**/dist/**": true
+  }
+}
