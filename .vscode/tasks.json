@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Apply Patch",
+			"type": "shell",
+			"command": "node apply_patch.js"
+		},
+		{
+			"label": "Apply Patch CJS",
+			"type": "shell",
+			"command": "mv apply_patch.js apply_patch.cjs && node apply_patch.cjs"
+		},
+		{
+			"label": "Apply Patch CJS Fixed",
+			"type": "shell",
+			"command": "mv apply_patch.js apply_patch.cjs ; node apply_patch.cjs ; npm run build"
+		},
+		{
+			"label": "Cleanup unused files",
+			"type": "shell",
+			"command": "rm -f apply_patch.cjs diff_utf8.patch diff.txt extract.txt gitlog.txt original_TaskProfilePage.jsx replacer.cjs rm-modal.cjs script_out.txt"
+		},
+		{
+			"label": "Cleanup files",
+			"type": "shell",
+			"command": "Remove-Item -Force apply_patch.cjs, diff_utf8.patch, diff.txt, extract.txt, gitlog.txt, original_TaskProfilePage.jsx, replacer.cjs, rm-modal.cjs, script_out.txt -ErrorAction SilentlyContinue"
+		},
+		{
+			"label": "check source",
+			"type": "shell",
+			"command": "cat src/features/CrmTasksV1/pages/TaskProfilePage.jsx | head -n 150"
+		},
+		{
+			"label": "check source with powershell",
+			"type": "shell",
+			"command": "Get-Content src/features/CrmTasksV1/pages/TaskProfilePage.jsx | Select-Object -First 150"
+		}
+	]
+}
