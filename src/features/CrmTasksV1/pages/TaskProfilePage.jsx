@@ -725,6 +725,55 @@ export default function TaskProfilePage() {
     { id: "2755884", type: "Standard 2", balance: 1025.5, equity: 1170.4, credit: 0 },
   ]), []);
 
+  const v4AdditionalAccountSections = useMemo(() => ([
+    {
+      id: "demo",
+      label: t("taskProfilePage.accountsTasks.demoAccounts"),
+      dotClass: "bg-emerald-400",
+      rows: [
+        { id: "9801101", type: "Demo MT5" },
+        { id: "9801102", type: "Demo Standard" },
+        { id: "9801103", type: "Demo Zero" },
+      ],
+    },
+    {
+      id: "investor",
+      label: t("taskProfilePage.accountsTasks.investorAccounts"),
+      dotClass: "bg-blue-500",
+      rows: [
+        { id: "7702211", type: "Investor Alpha" },
+        { id: "7702212", type: "Investor Prime" },
+      ],
+    },
+    {
+      id: "ib",
+      label: t("taskProfilePage.accountsTasks.ibAccounts"),
+      dotClass: "bg-amber-500",
+      rows: [
+        { id: "6603311", type: "IB Standard" },
+        { id: "6603312", type: "IB Premium" },
+      ],
+    },
+    {
+      id: "mam",
+      label: t("taskProfilePage.accountsTasks.mamAccounts"),
+      dotClass: "bg-rose-500",
+      rows: [
+        { id: "5504411", type: "MAM Pro" },
+        { id: "5504412", type: "MAM Master" },
+      ],
+    },
+    {
+      id: "wallet",
+      label: t("taskProfilePage.accountsTasks.walletAccounts"),
+      dotClass: "bg-indigo-500",
+      rows: [
+        { id: "4405511", type: "Wallet USD" },
+        { id: "4405512", type: "Wallet EUR" },
+      ],
+    },
+  ]), [t]);
+
   const emptyAccountSectionLabels = useMemo(() => ([
     t("taskProfilePage.accountsTasks.demoAccounts"),
     t("taskProfilePage.accountsTasks.investorAccounts"),
@@ -2337,42 +2386,53 @@ export default function TaskProfilePage() {
                         ))}
                       </select>
                     </div>
-                    <div className="overflow-auto max-h-[400px] custom-scrollbar p-3">
-                      <div className="space-y-2">
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar">
+                      <table className="w-full min-w-[980px] text-sm">
+                        <thead className="bg-[#1b2942] text-slate-200 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.createdAt")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.from")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.to")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.subject")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.emailType")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.sent")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.resendEmail")}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-[#0f1727] divide-y divide-slate-700/70">
                         {filteredEmailMessages.length === 0 ? (
-                          <p className="text-xs text-center text-slate-400 py-4">{t("taskProfilePage.emailRowsEmpty")}</p>
+                            <tr>
+                              <td colSpan={7} className="px-4 py-7 text-center text-slate-300">
+                                {t("taskProfilePage.emailRowsEmpty")}
+                              </td>
+                            </tr>
                         ) : (
                           filteredEmailMessages.map((row) => (
-                            <div key={row.id} className="rounded-lg bg-[#0a101a] border border-slate-700/50 p-3 hover:border-indigo-500/30 transition-colors">
-                              <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700/50">
-                                <span className="text-xs font-semibold text-indigo-300 truncate pr-2" title={row.subject}>{row.subject}</span>
-                                <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">{row.emailType}</span>
-                              </div>
-                              <div className="grid grid-cols-12 gap-2 text-[10px] mb-2">
-                                <div className="col-span-8">
-                                  <p className="truncate" title={row.from}><span className="text-slate-500">From:</span> <span className="text-slate-300 font-medium">{row.from}</span></p>
-                                  <p className="truncate" title={row.to}><span className="text-slate-500">To:</span> <span className="text-slate-300 font-medium">{row.to}</span></p>
-                                </div>
-                                <div className="col-span-4 text-right">
-                                  <p className="text-slate-400 mb-1 whitespace-nowrap">{formatDateTime(row.createdAt)}</p>
-                                  <p className="text-slate-500">Sent: <span className={row.sent ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold"}>{row.sent ? t("taskProfilePage.yes", "Yes") : t("taskProfilePage.no", "No")}</span></p>
-                                </div>
-                              </div>
-                              <div className="flex justify-end pt-1">
+                            <tr key={row.id} className="hover:bg-[#162133] transition-colors">
+                              <td className="px-3 py-2.5 text-slate-200 whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
+                              <td className="px-3 py-2.5 text-slate-100 truncate max-w-[150px]" title={row.from}>{row.from}</td>
+                              <td className="px-3 py-2.5 text-sky-300 truncate max-w-[150px]" title={row.to}>{row.to}</td>
+                              <td className="px-3 py-2.5 text-slate-100 truncate max-w-[220px]" title={row.subject}>{row.subject}</td>
+                              <td className="px-3 py-2.5 text-slate-300">{row.emailType}</td>
+                              <td className="px-3 py-2.5 text-slate-100">{row.sent ? t("taskProfilePage.yes") : t("common.na")}</td>
+                              <td className="px-3 py-2.5">
                                 <button
                                   type="button"
                                   onClick={() => handleResendEmail(row.id)}
-                                  className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                                    lastResentEmailId === row.id ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border border-indigo-500/30"
+                                  className={`px-2.5 py-1 rounded border text-xs font-semibold transition-colors ${
+                                    lastResentEmailId === row.id
+                                      ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-200"
+                                      : "border-indigo-500/60 bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25"
                                   }`}
                                 >
                                   {lastResentEmailId === row.id ? t("taskProfilePage.resent") : t("taskProfilePage.resend")}
                                 </button>
-                              </div>
-                            </div>
+                              </td>
+                            </tr>
                           ))
                         )}
-                      </div>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
@@ -2403,29 +2463,39 @@ export default function TaskProfilePage() {
                       <button type="button" onClick={handleExportJournal} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">{t("taskProfilePage.export")}</button>
                     </div>
                     <div className="overflow-auto max-h-[400px] custom-scrollbar">
-                      <table className="w-full min-w-[700px] text-xs text-left">
-                        <thead className="bg-[#1b2942] text-slate-300 sticky top-0">
+                      <table className="w-full min-w-[900px] text-sm">
+                        <thead className="bg-[#1b2942] text-slate-200 sticky top-0">
                           <tr>
-                            <th className="px-3 py-2 font-semibold">{t("taskProfilePage.date")}</th>
-                            <th className="px-3 py-2 font-semibold">{t("common.event")}</th>
-                            <th className="px-3 py-2 font-semibold">{t("common.task")}</th>
-                            <th className="px-3 py-2 font-semibold text-center">{t("taskProfilePage.securityDetails")}</th>
-                            <th className="px-3 py-2 font-semibold text-right">{t("taskProfilePage.ip")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.date")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("common.event")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("common.task")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.securityDetails")}</th>
+                            <th className="px-3 py-2.5 text-left font-semibold">{t("taskProfilePage.ip")}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-700/50">
+                        <tbody className="bg-[#0f1727] divide-y divide-slate-700/70">
                           {journalRows.length === 0 ? (
-                            <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400">{t("taskProfilePage.journalRowsEmpty")}</td></tr>
+                            <tr>
+                              <td colSpan={5} className="px-4 py-7 text-center text-slate-300">
+                                {t("taskProfilePage.journalRowsEmpty")}
+                              </td>
+                            </tr>
                           ) : (
                             journalRows.map((row) => (
                               <tr key={row.id} className="hover:bg-[#162133] transition-colors">
-                                <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">{formatDateTime(row.dateAt)}</td>
-                                <td className="px-3 py-2.5 text-slate-100 font-medium">{row.event}</td>
-                                <td className="px-3 py-2.5 text-slate-400">{row.taskLabel}</td>
-                                <td className="px-3 py-2.5 text-center">
-                                  <button type="button" onClick={() => setSelectedPayload(row)} className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 font-semibold">{t("taskProfilePage.seePayload")}</button>
+                                <td className="px-3 py-2.5 text-slate-200 whitespace-nowrap">{formatDateTime(row.dateAt)}</td>
+                                <td className="px-3 py-2.5 text-slate-100">{row.event}</td>
+                                <td className="px-3 py-2.5 text-slate-100">{row.taskLabel}</td>
+                                <td className="px-3 py-2.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPayload(row)}
+                                    className="px-2.5 py-1 rounded border border-emerald-500/60 bg-emerald-500/15 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/25"
+                                  >
+                                    {t("taskProfilePage.seePayload")}
+                                  </button>
                                 </td>
-                                <td className="px-3 py-2.5 text-slate-500 text-right font-mono text-[10px]">{row.ip}</td>
+                                <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">{row.ip}</td>
                               </tr>
                             ))
                           )}
@@ -2482,11 +2552,34 @@ export default function TaskProfilePage() {
                       )}
                     </div>
                     
-                    {/* Other Account Types Quick Look */}
-                    <div className="mt-4 pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2">
-                      <div className="bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[0] || "Wallet"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
-                      <div className="bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[1] || "Demo"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
-                      <div className="col-span-2 bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[2] || "IB / MAM / Investor"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
+                    {/* Other Account Types */}
+                    <div className="mt-4 pt-4 border-t border-slate-700/60 space-y-2.5">
+                      {v4AdditionalAccountSections.map((section) => (
+                        <details key={section.id} className="rounded-lg border border-slate-700/50 bg-[#0a101a] overflow-hidden group">
+                          <summary className="flex items-center justify-between p-2.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-1.5 h-3.5 rounded-full ${section.dotClass}`}></span>
+                              <span className="text-[11px] font-semibold tracking-wide text-slate-200 uppercase">{section.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">{section.rows.length}</span>
+                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                          </summary>
+                          <div className="border-t border-slate-700/50 p-2.5 space-y-1.5">
+                            {section.rows.length === 0 ? (
+                              <p className="text-xs text-slate-400 text-center py-2">{t("taskProfilePage.accountsTasks.noAccountsFound")}</p>
+                            ) : (
+                              section.rows.map((row) => (
+                                <div key={`${section.id}-${row.id}`} className="flex items-center justify-between rounded-md border border-slate-700/50 bg-[#111a2c] px-2.5 py-2">
+                                  <span className="text-xs font-bold text-sky-300">#{row.id}</span>
+                                  <span className="text-[10px] uppercase tracking-wide text-slate-400">{row.type}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </details>
+                      ))}
                     </div>
                   </div>
                 )}
