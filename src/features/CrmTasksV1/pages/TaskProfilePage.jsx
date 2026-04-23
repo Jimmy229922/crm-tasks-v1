@@ -294,6 +294,16 @@ export default function TaskProfilePage() {
   const [isV3ClosedTasksOpen, setIsV3ClosedTasksOpen] = useState(false);
   const [isV3EmailMessagesOpen, setIsV3EmailMessagesOpen] = useState(false);
   const [isV3ClientJournalOpen, setIsV3ClientJournalOpen] = useState(false);
+  const [isV4Mode, setIsV4Mode] = useState(false);
+  const [v4OpenSections, setV4OpenSections] = useState({
+    notes: false,
+    trading: false,
+    documents: false,
+    openTasks: false,
+    closedTasks: false,
+    emails: false,
+    journal: false,
+  });
   const [v2OpenSections, setV2OpenSections] = useState(() => createV2SectionState(false));
   const [v2LoadedSections, setV2LoadedSections] = useState(() => createV2SectionState(false));
   const [v2LoadingSections, setV2LoadingSections] = useState(() => createV2SectionState(false));
@@ -354,7 +364,10 @@ export default function TaskProfilePage() {
     const nextMode = !isV2Mode;
 
     setIsV2Mode(nextMode);
-    if (nextMode) setIsV3Mode(false);
+    if (nextMode) {
+      setIsV3Mode(false);
+      setIsV4Mode(false);
+    }
     setWorkspaceModal(null);
 
     if (nextMode) {
@@ -367,8 +380,28 @@ export default function TaskProfilePage() {
   const handleToggleV3Mode = () => {
     const nextMode = !isV3Mode;
     setIsV3Mode(nextMode);
-    if (nextMode) setIsV2Mode(false);
+    if (nextMode) {
+      setIsV2Mode(false);
+      setIsV4Mode(false);
+    }
     setWorkspaceModal(null);
+  };
+
+  const handleToggleV4Mode = () => {
+    const nextMode = !isV4Mode;
+    setIsV4Mode(nextMode);
+    if (nextMode) {
+      setIsV2Mode(false);
+      setIsV3Mode(false);
+    }
+    setWorkspaceModal(null);
+  };
+
+  const toggleV4Section = (section) => {
+    setV4OpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
 
   const formatDateTime = (value) => {
@@ -1189,6 +1222,7 @@ export default function TaskProfilePage() {
     setLastResentEmailId(null);
     setIsV2Mode(false);
     setIsV3Mode(false);
+    setIsV4Mode(false);
 
     Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
       clearTimeout(timeoutId);
@@ -1390,7 +1424,7 @@ export default function TaskProfilePage() {
           </div>
 
           {/* General Info Row */}
-          {!isV3Mode ? (
+          {(!isV3Mode && !isV4Mode) ? (
           <div className="border-t border-slate-700/60 bg-black/20 px-5 sm:px-8 py-4 sm:py-5 flex flex-col xl:flex-row xl:items-stretch gap-6 backdrop-blur-sm">
             {/* Title block */}
             <div className="xl:w-1/4 shrink-0 flex items-center justify-between xl:flex-col xl:items-start xl:justify-center border-r-0 xl:border-r border-slate-700/50 xl:pr-6">
@@ -1436,7 +1470,7 @@ export default function TaskProfilePage() {
               </button>
             </div>
           </div>
-          ) : (
+          ) : isV3Mode ? (
           <div className="border-t border-slate-700/60 bg-black/20 px-5 sm:px-8 py-5 sm:py-6 flex flex-col gap-8 backdrop-blur-sm">
             <div className="flex flex-col xl:flex-row gap-8">
               
@@ -1492,9 +1526,110 @@ export default function TaskProfilePage() {
 
             </div>
           </div>
+          ) : (
+          <div className="border-t border-slate-700/60 bg-gradient-to-b from-[#0f1727]/80 to-transparent px-5 sm:px-8 py-6 flex flex-col gap-6 backdrop-blur-sm relative overflow-hidden">
+            {/* V4 Decorative Background */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+            {/* V4 Client Status Summary Header */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-2 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 shadow-inner flex items-center justify-center text-slate-300">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-wide">Client Profile</h2>
+                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Active Profile
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 bg-[#0a101a]/50 p-2 rounded-xl border border-slate-700/50">
+                 {headerProfileFacts.slice(0,3).map((fact) => (
+                    <div key={fact.id} className="flex flex-col px-3 border-r border-slate-700/50 last:border-0">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-500">{fact.label}</p>
+                      <p className="text-sm font-bold text-slate-200 mt-0.5">{fact.value}</p>
+                    </div>
+                 ))}
+              </div>
+            </div>
+
+            {/* V4 Comprehensive Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 z-10">
+              
+              {/* Comprehensive General Info */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">General Info</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {headerProfileFacts.map((fact) => (
+                    <div key={fact.id} className="flex items-center justify-between gap-4">
+                      <span className="text-[11px] text-slate-400 shrink-0">{fact.label}</span>
+                      <span className="text-xs font-semibold text-white text-right truncate" title={fact.value}>{fact.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comprehensive Experience Info */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">Experience</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {experienceInfoLeftRows.map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Financial & Trade Profile */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2-4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">Trade Profile</h3>
+                </div>
+                <div className="space-y-3.5">
+                   {experienceInfoRightRows.map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Regulatory & Additional Info */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">Regulatory</h3>
+                </div>
+                <div className="space-y-3.5">
+                   {[...additionalInfoLeftRows, ...additionalInfoRightRows].map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
           )}
         </section>
 
+        {!isV4Mode ? (
+          <>
         <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-slate-700/80">
             <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("taskProfilePage.tabs.overview")}</p>
@@ -2106,6 +2241,432 @@ export default function TaskProfilePage() {
             </button>
           </div>
         </section>
+        )}
+        </>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mt-6 animate-in fade-in duration-300">
+            {/* V4 Layout Structure */}
+            
+            {/* V4 Left Pillar: Communications & Activity */}
+            <div className="xl:col-span-4 flex flex-col gap-6">
+              
+              {/* V4 Notes Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("notes")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">{t("taskProfilePage.postNoteTitle", "Notes & Activity")}</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Workspace Logs</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.notes ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.notes && (
+                  <div className="p-4 sm:p-5 border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="flex flex-col gap-3">
+                      <textarea
+                        value={noteDraft}
+                        onChange={(e) => { setNoteDraft(e.target.value); if (noteError) setNoteError(""); }}
+                        rows={2}
+                        placeholder={t("taskProfilePage.postNotePlaceholder")}
+                        className="w-full rounded-md border border-slate-600 bg-[#0a101a] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-500/70 resize-none"
+                      />
+                      <div className="flex items-center justify-between shrink-0">
+                        <p className="text-[11px] text-rose-300 min-h-[16px]">{noteError || " "}</p>
+                        <button type="button" onClick={handleShareNote} className="px-4 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-semibold tracking-wide transition-colors">{t("taskProfilePage.shareInternally")}</button>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar border-t border-slate-700/60 pt-4">
+                      {activityNotes.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-4">{t("taskProfilePage.activityEmpty")}</p>
+                      ) : (
+                        activityNotes.map((entry) => (
+                          <article key={entry.id} className="rounded-md bg-[#0a101a] border border-slate-700/50 px-3 py-2 border-l-[3px] border-l-sky-500 relative overflow-hidden group">
+                            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0a101a] to-transparent pointer-events-none"></div>
+                            <p className="text-sm text-slate-200 leading-relaxed font-medium">{entry.note}</p>
+                            <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1.5">
+                              <span className="font-semibold text-slate-300">{entry.actor}</span>
+                              <span>•</span>
+                              <span>{formatDateTime(entry.postedAt)}</span>
+                            </div>
+                          </article>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* V4 Email Messages Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("emails")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">{t("taskProfilePage.emailMessages", "Email Messages")}</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Communication</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.emails ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.emails && (
+                  <div className="border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="p-3 border-b border-slate-700/50 bg-[#0f1727]/30 flex justify-end">
+                      <select
+                        value={emailTypeFilter}
+                        onChange={(e) => setEmailTypeFilter(e.target.value)}
+                        className="w-full sm:w-auto rounded-lg border border-slate-600 bg-[#0a101a] text-slate-100 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/70"
+                      >
+                        {emailTypeOptions.map((option) => (
+                          <option key={option} value={option}>{option === "all" ? t("taskProfilePage.showAllEmails") : option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar p-3">
+                      <div className="space-y-2">
+                        {filteredEmailMessages.length === 0 ? (
+                          <p className="text-xs text-center text-slate-400 py-4">{t("taskProfilePage.emailRowsEmpty")}</p>
+                        ) : (
+                          filteredEmailMessages.map((row) => (
+                            <div key={row.id} className="rounded-lg bg-[#0a101a] border border-slate-700/50 p-3 hover:border-indigo-500/30 transition-colors">
+                              <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700/50">
+                                <span className="text-xs font-semibold text-indigo-300 truncate pr-2" title={row.subject}>{row.subject}</span>
+                                <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">{row.emailType}</span>
+                              </div>
+                              <div className="grid grid-cols-12 gap-2 text-[10px] mb-2">
+                                <div className="col-span-8">
+                                  <p className="truncate" title={row.from}><span className="text-slate-500">From:</span> <span className="text-slate-300 font-medium">{row.from}</span></p>
+                                  <p className="truncate" title={row.to}><span className="text-slate-500">To:</span> <span className="text-slate-300 font-medium">{row.to}</span></p>
+                                </div>
+                                <div className="col-span-4 text-right">
+                                  <p className="text-slate-400 mb-1 whitespace-nowrap">{formatDateTime(row.createdAt)}</p>
+                                  <p className="text-slate-500">Sent: <span className={row.sent ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold"}>{row.sent ? t("taskProfilePage.yes", "Yes") : t("taskProfilePage.no", "No")}</span></p>
+                                </div>
+                              </div>
+                              <div className="flex justify-end pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleResendEmail(row.id)}
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                                    lastResentEmailId === row.id ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border border-indigo-500/30"
+                                  }`}
+                                >
+                                  {lastResentEmailId === row.id ? t("taskProfilePage.resent") : t("taskProfilePage.resend")}
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* V4 Client Journal Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("journal")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">{t("taskProfilePage.clientJournal", "Client Journal")}</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Audit & Security</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.journal ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.journal && (
+                  <div className="border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="p-3 border-b border-slate-700/50 bg-[#0f1727]/30 flex justify-end">
+                      <button type="button" onClick={handleExportJournal} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">{t("taskProfilePage.export")}</button>
+                    </div>
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar">
+                      <table className="w-full min-w-[700px] text-xs text-left">
+                        <thead className="bg-[#1b2942] text-slate-300 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">{t("taskProfilePage.date")}</th>
+                            <th className="px-3 py-2 font-semibold">{t("common.event")}</th>
+                            <th className="px-3 py-2 font-semibold">{t("common.task")}</th>
+                            <th className="px-3 py-2 font-semibold text-center">{t("taskProfilePage.securityDetails")}</th>
+                            <th className="px-3 py-2 font-semibold text-right">{t("taskProfilePage.ip")}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50">
+                          {journalRows.length === 0 ? (
+                            <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400">{t("taskProfilePage.journalRowsEmpty")}</td></tr>
+                          ) : (
+                            journalRows.map((row) => (
+                              <tr key={row.id} className="hover:bg-[#162133] transition-colors">
+                                <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">{formatDateTime(row.dateAt)}</td>
+                                <td className="px-3 py-2.5 text-slate-100 font-medium">{row.event}</td>
+                                <td className="px-3 py-2.5 text-slate-400">{row.taskLabel}</td>
+                                <td className="px-3 py-2.5 text-center">
+                                  <button type="button" onClick={() => setSelectedPayload(row)} className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 font-semibold">{t("taskProfilePage.seePayload")}</button>
+                                </td>
+                                <td className="px-3 py-2.5 text-slate-500 text-right font-mono text-[10px]">{row.ip}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* V4 Middle Pillar: Financials & Compliance */}
+            <div className="xl:col-span-4 flex flex-col gap-6">
+              
+              {/* V4 Trading Accounts Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("trading")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">{t("taskProfilePage.accountsTasks.tradingAccounts", "Trading Accounts")}</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Financial Assets</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.trading ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.trading && (
+                  <div className="p-4 sm:p-5 border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="space-y-3 overflow-y-auto max-h-[350px] custom-scrollbar pr-1">
+                      {tradingAccountsRows.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-4">{t("taskProfilePage.accountsTasks.noAccountsFound")}</p>
+                      ) : (
+                        tradingAccountsRows.map((row) => (
+                          <div key={row.id} className="flex flex-col rounded-lg bg-[#0a101a] border border-slate-700/50 p-3 hover:border-purple-500/30 transition-colors">
+                            <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-700/50">
+                              <span className="text-xs font-bold text-purple-300">#{row.id}</span>
+                              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase bg-slate-800 px-2 py-0.5 rounded">{row.type}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-[10px]">
+                              <div><span className="text-slate-500">Balance:</span> <span className="text-white font-semibold block">{formatCurrencyAmount(row.balance, locale)}</span></div>
+                              <div className="text-center"><span className="text-slate-500">Credit:</span> <span className="text-white font-semibold block">{formatCurrencyAmount(row.credit, locale)}</span></div>
+                              <div className="text-right"><span className="text-slate-500">Equity:</span> <span className="text-white font-semibold block">{formatCurrencyAmount(row.equity, locale)}</span></div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    {/* Other Account Types Quick Look */}
+                    <div className="mt-4 pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2">
+                      <div className="bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[0] || "Wallet"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
+                      <div className="bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[1] || "Demo"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
+                      <div className="col-span-2 bg-[#0a101a] border border-slate-700/50 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-500 uppercase">{emptyAccountSectionLabels[2] || "IB / MAM / Investor"}</p><p className="text-sm font-bold text-white mt-0.5">0</p></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* V4 Documents Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("documents")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">{t("taskProfilePage.details.documents", "Documents")}</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Compliance & KYC</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.documents ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.documents && (
+                  <div className="border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar">
+                      <table className="w-full min-w-[980px] text-xs text-left">
+                        <thead className="bg-[#1b2942] text-slate-300 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.type")}</th>
+                            <th className="px-4 py-2.5 font-semibold text-center">{t("taskProfilePage.details.documentsTable.status")}</th>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.expiresOn")}</th>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.reviewedBy")}</th>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.submittedBy")}</th>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.submittedOn")}</th>
+                            <th className="px-4 py-2.5 font-semibold">{t("taskProfilePage.details.documentsTable.checkedOn")}</th>
+                            <th className="px-4 py-2.5 font-semibold text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50">
+                          {detailsDocuments.map((row) => (
+                            <tr key={row.id} className="hover:bg-[#162133] transition-colors">
+                              <td className="px-4 py-3 text-slate-200 font-medium">{row.type}</td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${row.status === "APPROVED" ? "bg-emerald-500/10 text-emerald-400" : row.status === "DECLINED" ? "bg-rose-500/10 text-rose-400" : "bg-slate-500/10 text-slate-300"}`}>
+                                  {row.status === "APPROVED" ? t("taskProfilePage.details.documentsTable.approved") : row.status === "DECLINED" ? t("taskProfilePage.details.documentsTable.declined") : row.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-slate-400">{row.expiresOn}</td>
+                              <td className="px-4 py-3 text-slate-400">{row.reviewedBy}</td>
+                              <td className="px-4 py-3 text-slate-400">{row.submittedBy}</td>
+                              <td className="px-4 py-3 text-slate-400">{row.submittedOn}</td>
+                              <td className="px-4 py-3 text-slate-400">{row.checkedOn}</td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button type="button" className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors" title={t("common.view")}><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg></button>
+                                  <button type="button" className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Video"><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+            </div>
+
+            {/* V4 Right Pillar: Operations */}
+            <div className="xl:col-span-4 flex flex-col gap-6">
+              
+              {/* V4 Open Tasks Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("openTasks")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-pink-500/15 flex items-center justify-center text-pink-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">Open Tasks</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Active Workflows</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.openTasks ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.openTasks && (
+                  <div className="border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar p-3">
+                      {openTasksRows.length === 0 ? (
+                        <div className="bg-[#0a101a] border border-slate-700/50 rounded-xl p-6 text-center shadow-inner flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 mb-3">
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-300">No open tasks</p>
+                          <p className="text-xs text-slate-500 mt-1">This client has no active assignments.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {openTasksRows.map((row) => (
+                            <div key={row.id} className="rounded-lg bg-[#0a101a] border border-slate-700/50 p-3 hover:border-pink-500/30 transition-colors">
+                              <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700/50">
+                                <span className="text-xs font-bold text-pink-300">{row.type}</span>
+                                <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-pink-500/10 text-pink-400 border border-pink-500/20">{row.status}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px] mb-2">
+                                <div><span className="text-slate-500 block mb-0.5">Assigned To:</span> <span className="text-slate-200 font-medium">{row.assignedTo}</span></div>
+                                <div className="text-right"><span className="text-slate-500 block mb-0.5">Assigned By:</span> <span className="text-slate-200 font-medium">{row.assignedBy}</span></div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <div><span className="text-slate-500 block mb-0.5">Due:</span> <span className="text-slate-400">{row.dateDue}</span></div>
+                                <div className="text-right"><span className="text-slate-500 block mb-0.5">Created:</span> <span className="text-slate-400">{row.dateCreated}</span></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* V4 Closed Tasks Accordion */}
+              <div className="rounded-2xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col transition-all">
+                <button 
+                  type="button" 
+                  onClick={() => toggleV4Section("closedTasks")}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#162133] transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-500/15 flex items-center justify-center text-slate-300">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-bold text-white leading-tight">Closed Tasks</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 tracking-wide uppercase">Historical Workflows</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${v4OpenSections.closedTasks ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {v4OpenSections.closedTasks && (
+                  <div className="border-t border-slate-700/60 bg-[#111a2c]">
+                    <div className="overflow-auto max-h-[400px] custom-scrollbar p-3">
+                      {closedTasksRows.length === 0 ? (
+                        <p className="text-xs text-center text-slate-400 py-4">No closed tasks found.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {closedTasksRows.map((row) => (
+                            <div key={row.id} className="rounded-lg bg-[#0a101a] border border-slate-700/50 p-3 hover:border-slate-500/50 transition-colors">
+                              <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700/50">
+                                <span className="text-xs font-bold text-slate-200">{row.type}</span>
+                                <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-600">{row.status}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px] mb-2">
+                                <div><span className="text-slate-500 block mb-0.5">Assigned To:</span> <span className="text-slate-300 font-medium">{row.assignedTo}</span></div>
+                                <div className="text-right"><span className="text-slate-500 block mb-0.5">Assigned By:</span> <span className="text-slate-300 font-medium">{row.assignedBy}</span></div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <div><span className="text-slate-500 block mb-0.5">Due:</span> <span className="text-slate-400">{row.dateDue}</span></div>
+                                <div className="text-right"><span className="text-slate-500 block mb-0.5">Created:</span> <span className="text-slate-400">{row.dateCreated}</span></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
         )}
 
         <section className="hidden">
@@ -2758,6 +3319,20 @@ export default function TaskProfilePage() {
           <span>V3</span>
           <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
             {isV3Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleToggleV4Mode}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+            isV4Mode
+              ? "border-pink-500/60 bg-pink-500/20 text-pink-100 hover:bg-pink-500/30"
+              : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+          }`}
+        >
+          <span>V4</span>
+          <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+            {isV4Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
           </span>
         </button>
       </div>
