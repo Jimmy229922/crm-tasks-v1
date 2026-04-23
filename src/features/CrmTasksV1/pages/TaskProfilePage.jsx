@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getClientById,
@@ -9,6 +9,15 @@ import { useI18n } from "../../../i18n/I18nProvider";
 import TaskDetailsPage from "./TaskDetailsPage";
 
 const EMAIL_SENDER = "support@inzo.co";
+const V2_SECTION_IDS = ["details", "activity", "accounts", "emails", "journal", "card", "documents"];
+const V2_SECTION_LOAD_DELAY_MS = 320;
+
+function createV2SectionState(initialValue = false) {
+  return V2_SECTION_IDS.reduce((result, sectionId) => {
+    result[sectionId] = initialValue;
+    return result;
+  }, {});
+}
 
 function parseDateValue(value) {
   if (!value) {
@@ -197,6 +206,72 @@ function DetailsKeyValueTable({ rows }) {
   );
 }
 
+function V2AccordionSection({
+  title,
+  subtitle,
+  isOpen,
+  isLoading,
+  isLoaded,
+  onToggle,
+  loadingLabel,
+  children,
+  colorClass = "bg-sky-500",
+  badgeCount = null,
+  isStatic = false,
+}) {
+  return (
+    <article className="rounded-xl border border-slate-700/80 bg-[#0f1727] shadow-sm overflow-hidden mb-4">
+      <button
+        type="button"
+        onClick={isStatic ? undefined : onToggle}
+        disabled={isStatic}
+        className={`w-full flex flex-row items-center justify-between p-4 sm:p-5 transition-colors select-none outline-none text-left ${isStatic ? "cursor-default border-b border-slate-700/80 bg-[#0b121f]" : "hover:bg-[#162133] cursor-pointer"}`}
+      >
+        <div className="flex flex-col items-start gap-1">
+          <div className="flex items-center gap-3">
+            <div className={`w-1.5 h-4 rounded-full ${colorClass}`}></div>
+            <h3 className="text-[17px] font-semibold tracking-wide text-slate-200">{title}</h3>
+          </div>
+          {subtitle ? <p className="text-[11px] text-slate-400 ltr:ml-4 rtl:mr-4 mt-0.5">{subtitle}</p> : null}
+        </div>
+        <div className="flex items-center gap-4 shrink-0">
+          {badgeCount !== null && (
+            <span className="bg-slate-700/60 text-slate-300 font-bold text-xs px-2.5 py-0.5 rounded border border-slate-600/50">
+              {badgeCount}
+            </span>
+          )}
+          {!isStatic && (
+            <svg
+              className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
+        </div>
+      </button>
+
+      {(isOpen || isStatic) ? (
+        <div className={`px-4 sm:px-6 py-5 bg-[#0b121f] ${!isStatic && "border-t border-slate-700/80"}`}>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <p className="text-sm text-slate-400 animate-pulse">{loadingLabel}</p>
+            </div>
+          ) : (isLoaded || isStatic) ? (
+            children
+          ) : (
+            <div className="flex items-center justify-center p-8">
+              <p className="text-sm text-slate-400 animate-pulse">{loadingLabel}</p>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export default function TaskProfilePage() {
   const navigate = useNavigate();
   const { clientId } = useParams();
@@ -210,6 +285,75 @@ export default function TaskProfilePage() {
   const [workspaceModal, setWorkspaceModal] = useState(null);
   const [selectedPayload, setSelectedPayload] = useState(null);
   const [lastResentEmailId, setLastResentEmailId] = useState(null);
+  const [isV2Mode, setIsV2Mode] = useState(false);
+  const [v2OpenSections, setV2OpenSections] = useState(() => createV2SectionState(false));
+  const [v2LoadedSections, setV2LoadedSections] = useState(() => createV2SectionState(false));
+  const [v2LoadingSections, setV2LoadingSections] = useState(() => createV2SectionState(false));
+  const v2LoadTimeoutsRef = useRef({});
+
+  const resetV2SectionsState = () => {
+    Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+
+    v2LoadTimeoutsRef.current = {};
+    setV2OpenSections(createV2SectionState(false));
+    setV2LoadedSections(createV2SectionState(false));
+    setV2LoadingSections(createV2SectionState(false));
+  };
+
+  const triggerV2SectionLoad = (sectionId) => {
+    if (v2LoadedSections[sectionId] || v2LoadingSections[sectionId]) {
+      return;
+    }
+
+    setV2LoadingSections((previous) => ({
+      ...previous,
+      [sectionId]: true,
+    }));
+
+    const timeoutId = setTimeout(() => {
+      setV2LoadedSections((previous) => ({
+        ...previous,
+        [sectionId]: true,
+      }));
+
+      setV2LoadingSections((previous) => ({
+        ...previous,
+        [sectionId]: false,
+      }));
+
+      delete v2LoadTimeoutsRef.current[sectionId];
+    }, V2_SECTION_LOAD_DELAY_MS);
+
+    v2LoadTimeoutsRef.current[sectionId] = timeoutId;
+  };
+
+  const handleToggleV2Section = (sectionId) => {
+    const willOpen = !v2OpenSections[sectionId];
+
+    setV2OpenSections((previous) => ({
+      ...previous,
+      [sectionId]: willOpen,
+    }));
+
+    if (willOpen) {
+      triggerV2SectionLoad(sectionId);
+    }
+  };
+
+  const handleToggleV2Mode = () => {
+    const nextMode = !isV2Mode;
+
+    setIsV2Mode(nextMode);
+    setWorkspaceModal(null);
+
+    if (nextMode) {
+      setSelectedPayload(null);
+      setOpenTaskDetailsId(null);
+      resetV2SectionsState();
+    }
+  };
 
   const formatDateTime = (value) => {
     const parsed = parseDateValue(value);
@@ -1027,8 +1171,26 @@ export default function TaskProfilePage() {
     setWorkspaceModal(null);
     setSelectedPayload(null);
     setLastResentEmailId(null);
+    setIsV2Mode(false);
+
+    Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+
+    v2LoadTimeoutsRef.current = {};
+    setV2OpenSections(createV2SectionState(false));
+    setV2LoadedSections(createV2SectionState(false));
+    setV2LoadingSections(createV2SectionState(false));
     setActivityNotes(seededActivityNotes);
   }, [clientId, seededActivityNotes]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (!workspaceModal) {
@@ -1118,6 +1280,10 @@ export default function TaskProfilePage() {
   const handleResendEmail = (emailId) => {
     setLastResentEmailId(emailId);
   };
+
+  const v2LoadingLabel = isRtl
+    ? "جاري تحميل بيانات القسم..."
+    : "Loading section data...";
 
   if (!client) {
     return (
@@ -2406,6 +2572,439 @@ export default function TaskProfilePage() {
           </div>
         </section>
       </main>
+
+      <button
+        type="button"
+        onClick={handleToggleV2Mode}
+        className={`fixed top-4 ${isRtl ? "left-4" : "right-4"} z-[95] inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+          isV2Mode
+            ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30"
+            : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+        }`}
+      >
+        <span>V2</span>
+        <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+          {isV2Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+        </span>
+      </button>
+
+      {isV2Mode ? (
+        <section className="fixed inset-0 z-[80] overflow-y-auto bg-[#020617]/95 backdrop-blur-sm px-4 sm:px-6 py-16">
+          <div className="max-w-screen-2xl mx-auto space-y-3">
+            <div className="rounded-xl border border-slate-700/80 bg-[#0f1727] px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">V2</p>
+              <h2 className="text-xl sm:text-2xl font-semibold text-white mt-1">
+                {isRtl ? "وضع المدير - الأقسام التفاعلية" : "Manager Mode - Section Accordion"}
+              </h2>
+              <p className="text-sm text-slate-300 mt-1">
+                {isRtl
+                  ? "افتح أي قسم لتحميل بياناته فقط، بدون تحميل باقي الأقسام دفعة واحدة."
+                  : "Open any section to load only its data without loading all sections at once."}
+              </p>
+            </div>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.viewTabs.details")}
+              subtitle={isRtl ? "البيانات الأساسية والخبرة والمعلومات الإضافية" : "General info, experience, and additional info"}
+              isStatic={true}
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <DetailsKeyValueTable rows={generalInfoLeftRows} />
+                  <DetailsKeyValueTable rows={generalInfoRightRows} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <DetailsKeyValueTable rows={experienceInfoLeftRows} />
+                  <DetailsKeyValueTable rows={experienceInfoRightRows} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <DetailsKeyValueTable rows={additionalInfoLeftRows} />
+                  <DetailsKeyValueTable rows={additionalInfoRightRows} />
+                </div>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.viewTabs.activity")}
+              subtitle={isRtl ? "الملاحظات والنشاط الداخلي" : "Internal notes and activity feed"}
+              isOpen={v2OpenSections.activity}
+              isLoading={v2LoadingSections.activity}
+              isLoaded={v2LoadedSections.activity}
+              onToggle={() => handleToggleV2Section("activity")}
+              loadingLabel={v2LoadingLabel}
+            >
+              <div className="space-y-3">
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={noteDraft}
+                    onChange={(event) => {
+                      setNoteDraft(event.target.value);
+                      if (noteError) {
+                        setNoteError("");
+                      }
+                    }}
+                    rows={3}
+                    placeholder={t("taskProfilePage.postNotePlaceholder")}
+                    className="w-full rounded-lg border border-slate-600 bg-[#111a2c] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/60"
+                  />
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] text-rose-300 min-h-[16px]">{noteError || " "}</p>
+                    <button
+                      type="button"
+                      onClick={handleShareNote}
+                      className="px-4 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold"
+                    >
+                      {t("taskProfilePage.shareInternally")}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {activityNotes.length === 0 ? (
+                    <p className="text-sm text-slate-300">{t("taskProfilePage.activityEmpty")}</p>
+                  ) : (
+                    activityNotes.map((entry) => (
+                      <article key={entry.id} className="rounded-md border border-slate-700 bg-[#162133] px-3 py-2 border-l-[3px] border-l-blue-500">
+                        <p className="text-sm text-slate-100">{entry.note}</p>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          {entry.actor} • {formatDateTime(entry.postedAt)}
+                        </p>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.viewTabs.accountsAndTasks")}
+              subtitle={isRtl ? "الحسابات المفتوحة ومهام العميل" : "Client accounts and tasks"}
+              isOpen={v2OpenSections.accounts}
+              isLoading={v2LoadingSections.accounts}
+              isLoaded={v2LoadedSections.accounts}
+              onToggle={() => handleToggleV2Section("accounts")}
+              loadingLabel={v2LoadingLabel}
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {summaryCards.map((card) => (
+                    <div key={card.id} className="rounded-lg border border-slate-700 bg-[#111a2c] px-3 py-2.5">
+                      <p className="text-xs uppercase tracking-wide text-slate-400">{card.label}</p>
+                      <p className="text-lg font-semibold text-white mt-1">{card.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="overflow-auto rounded-lg border border-slate-700">
+                  <table className="w-full min-w-[760px] text-sm">
+                    <thead className="bg-[#1b2942] text-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.accountsTasks.accountNumber")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("common.type")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.accountsTasks.balance")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.accountsTasks.equity")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[#0f1727] divide-y divide-slate-700/70">
+                      {tradingAccountsRows.map((row) => (
+                        <tr key={row.id}>
+                          <td className="px-3 py-2 text-sky-300">#{row.id}</td>
+                          <td className="px-3 py-2 text-slate-200">{row.type}</td>
+                          <td className="px-3 py-2 text-white">{formatCurrencyAmount(row.balance, locale)}</td>
+                          <td className="px-3 py-2 text-slate-300">{formatCurrencyAmount(row.equity, locale)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-slate-700 bg-[#111a2c] p-3">
+                    <h4 className="text-sm font-semibold text-white mb-2">{t("taskProfilePage.accountsTasks.openTasks")}</h4>
+                    {openTasksRows.length === 0 ? (
+                      <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noTasksData")}</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                        {openTasksRows.slice(0, 10).map((row) => (
+                          <button
+                            key={row.id}
+                            type="button"
+                            onClick={() => setOpenTaskDetailsId(row.taskId)}
+                            className="w-full rounded-md border border-slate-700 bg-[#0f1727] px-2.5 py-2 text-left hover:bg-[#19273d]"
+                          >
+                            <p className="text-sm text-sky-300 font-semibold truncate">{row.type}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{row.assignedTo} • {row.dateDue}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border border-slate-700 bg-[#111a2c] p-3">
+                    <h4 className="text-sm font-semibold text-white mb-2">{t("taskProfilePage.accountsTasks.closedTasks")}</h4>
+                    {closedTasksRows.length === 0 ? (
+                      <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noTasksData")}</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                        {closedTasksRows.slice(0, 10).map((row) => (
+                          <button
+                            key={row.id}
+                            type="button"
+                            onClick={() => setOpenTaskDetailsId(row.taskId)}
+                            className="w-full rounded-md border border-slate-700 bg-[#0f1727] px-2.5 py-2 text-left hover:bg-[#19273d]"
+                          >
+                            <p className="text-sm text-sky-300 font-semibold truncate">{row.type}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{row.assignedTo} • {row.dateDue}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.emailMessages")}
+              subtitle={isRtl ? "المراسلات المرتبطة بالعميل" : "Client email communication"}
+              isOpen={v2OpenSections.emails}
+              isLoading={v2LoadingSections.emails}
+              isLoaded={v2LoadedSections.emails}
+              onToggle={() => handleToggleV2Section("emails")}
+              loadingLabel={v2LoadingLabel}
+            >
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <select
+                    value={emailTypeFilter}
+                    onChange={(event) => setEmailTypeFilter(event.target.value)}
+                    className="w-full sm:w-auto min-w-[220px] rounded-lg border border-slate-600 bg-[#111a2c] text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/60"
+                  >
+                    {emailTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === "all" ? t("taskProfilePage.showAllEmails") : option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="overflow-auto rounded-lg border border-slate-700">
+                  <table className="w-full min-w-[980px] text-sm">
+                    <thead className="bg-[#1b2942] text-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.createdAt")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.from")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.to")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.subject")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.emailType")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.sent")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[#0f1727] divide-y divide-slate-700/70">
+                      {filteredEmailMessages.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-6 text-center text-slate-300">{t("taskProfilePage.emailRowsEmpty")}</td>
+                        </tr>
+                      ) : (
+                        filteredEmailMessages.map((row) => (
+                          <tr key={row.id} className="hover:bg-[#19273d]">
+                            <td className="px-3 py-2 text-slate-200 whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
+                            <td className="px-3 py-2 text-slate-100">{row.from}</td>
+                            <td className="px-3 py-2 text-sky-300">{row.to}</td>
+                            <td className="px-3 py-2 text-slate-100">{row.subject}</td>
+                            <td className="px-3 py-2 text-slate-300">{row.emailType}</td>
+                            <td className="px-3 py-2 text-slate-100">{row.sent ? t("taskProfilePage.yes") : t("common.na")}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.clientJournal")}
+              subtitle={isRtl ? "سجل الأحداث الأمنية والتنفيذية" : "Security and operational event log"}
+              isOpen={v2OpenSections.journal}
+              isLoading={v2LoadingSections.journal}
+              isLoaded={v2LoadedSections.journal}
+              onToggle={() => handleToggleV2Section("journal")}
+              loadingLabel={v2LoadingLabel}
+            >
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleExportJournal}
+                    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold"
+                  >
+                    {t("taskProfilePage.export")}
+                  </button>
+                </div>
+
+                <div className="overflow-auto rounded-lg border border-slate-700">
+                  <table className="w-full min-w-[900px] text-sm">
+                    <thead className="bg-[#1b2942] text-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.date")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("common.event")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("common.task")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.securityDetails")}</th>
+                        <th className="px-3 py-2 text-left font-semibold">{t("taskProfilePage.ip")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[#0f1727] divide-y divide-slate-700/70">
+                      {journalRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-slate-300">{t("taskProfilePage.journalRowsEmpty")}</td>
+                        </tr>
+                      ) : (
+                        journalRows.map((row) => (
+                          <tr key={row.id} className="hover:bg-[#19273d]">
+                            <td className="px-3 py-2 text-slate-200 whitespace-nowrap">{formatDateTime(row.dateAt)}</td>
+                            <td className="px-3 py-2 text-slate-100">{row.event}</td>
+                            <td className="px-3 py-2 text-slate-100">{row.taskLabel}</td>
+                            <td className="px-3 py-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPayload(row)}
+                                className="px-2.5 py-1 rounded border border-sky-500/60 bg-sky-500/15 text-sky-200 text-xs font-semibold hover:bg-sky-500/25"
+                              >
+                                {t("taskProfilePage.seePayload")}
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 text-slate-300 whitespace-nowrap">{row.ip}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.viewTabs.card")}
+              subtitle={isRtl ? "تفاصيل البطاقة وحالة الحساب" : "Card details and account status"}
+              isOpen={v2OpenSections.card}
+              isLoading={v2LoadingSections.card}
+              isLoaded={v2LoadedSections.card}
+              onToggle={() => handleToggleV2Section("card")}
+              loadingLabel={v2LoadingLabel}
+              colorClass="bg-amber-500"
+            >
+              <div className="space-y-4">
+                <section className="rounded-2xl border border-slate-700 bg-[#111a2c] p-4 sm:p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-5 w-5 text-slate-200" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M3 5.5A1.5 1.5 0 014.5 4h11A1.5 1.5 0 0117 5.5v9a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 14.5v-9zm3 .5a1 1 0 100 2 1 1 0 000-2zm3 0a1 1 0 000 2h6a1 1 0 100-2H9zm-3 4a1 1 0 000 2h9a1 1 0 100-2H6z" />
+                      </svg>
+                      <h2 className="text-[24px] leading-tight font-semibold text-white">
+                        {t("taskProfilePage.card.cardHeader", { name: client?.name || "-" }, `INZO Card - ${client?.name || "-"}`)}
+                      </h2>
+                    </div>
+
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/40 bg-rose-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-rose-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-300" />
+                      {t("taskProfilePage.card.accountNotOpened")}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <DetailsKeyValueTable rows={cardInfoLeftRows} />
+                    <DetailsKeyValueTable rows={cardInfoRightRows} />
+                  </div>
+                </section>
+              </div>
+            </V2AccordionSection>
+
+            <V2AccordionSection
+              title={t("taskProfilePage.card.documents")}
+              subtitle={isRtl ? "مراجعة المستندات والمرفقات" : "Review documents and attachments"}
+              isOpen={v2OpenSections.documents}
+              isLoading={v2LoadingSections.documents}
+              isLoaded={v2LoadedSections.documents}
+              onToggle={() => handleToggleV2Section("documents")}
+              loadingLabel={v2LoadingLabel}
+              colorClass="bg-rose-500"
+            >
+              <div className="overflow-auto rounded-xl border border-slate-700/70">
+                <table className="w-full min-w-[980px] text-sm">
+                  <thead className="bg-[#18243a] text-slate-200">
+                    <tr>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.type")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.status")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.expiresOn")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.reviewedBy")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.submittedBy")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.submittedOn")}</th>
+                      <th className="px-3 py-3 text-left font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.checkedOn")}</th>
+                      <th className="px-3 py-3 text-center font-semibold uppercase tracking-wide text-xs">{t("taskProfilePage.details.documentsTable.actions")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/70 bg-[#0f1727]">
+                    {detailsDocuments.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="h-14" />
+                      </tr>
+                    ) : (
+                      detailsDocuments.map((row) => {
+                        const statusLabel = row.status === "APPROVED"
+                          ? t("taskProfilePage.details.documentsTable.approved")
+                          : row.status === "DECLINED"
+                            ? t("taskProfilePage.details.documentsTable.declined")
+                            : row.status;
+
+                        return (
+                          <tr key={row.id}>
+                            <td className="px-3 py-3 text-slate-100 font-medium max-w-[100px]">{row.type}</td>
+                            <td className={`px-3 py-3 font-bold ${getDocumentStatusTone(row.status)}`}>{statusLabel}</td>
+                            <td className="px-3 py-3 text-slate-300">{row.expiresOn}</td>
+                            <td className="px-3 py-3 text-slate-300">{row.reviewedBy}</td>
+                            <td className="px-3 py-3 text-slate-300">{row.submittedBy}</td>
+                            <td className="px-3 py-3 text-slate-300">{row.submittedOn}</td>
+                            <td className="px-3 py-3 text-slate-300">{row.checkedOn}</td>
+                            <td className="px-3 py-3 text-center align-middle">
+                              <div className="flex items-center justify-center gap-1.5 min-w-[70px]">
+                                <button
+                                  type="button"
+                                  className="h-8 w-8 rounded border border-sky-500/60 bg-sky-500/15 text-sky-200 hover:bg-sky-500/25 inline-flex items-center justify-center transition-colors"
+                                  aria-label={t("common.view")}
+                                  title={t("common.view")}
+                                >
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="h-8 w-8 rounded border border-emerald-500/60 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 inline-flex items-center justify-center transition-colors"
+                                  aria-label="Video"
+                                  title="Video"
+                                >
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polygon points="23 7 16 12 23 17 23 7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </V2AccordionSection>
+          </div>
+        </section>
+      ) : null}
 
       {workspaceModal ? (
         <>
