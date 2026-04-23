@@ -286,6 +286,14 @@ export default function TaskProfilePage() {
   const [selectedPayload, setSelectedPayload] = useState(null);
   const [lastResentEmailId, setLastResentEmailId] = useState(null);
   const [isV2Mode, setIsV2Mode] = useState(false);
+  const [isV3Mode, setIsV3Mode] = useState(false);
+  const [isV3NoteAccordionOpen, setIsV3NoteAccordionOpen] = useState(false);
+  const [isV3TradingAccountsOpen, setIsV3TradingAccountsOpen] = useState(false);
+  const [isV3DocumentsOpen, setIsV3DocumentsOpen] = useState(false);
+  const [isV3OpenTasksOpen, setIsV3OpenTasksOpen] = useState(false);
+  const [isV3ClosedTasksOpen, setIsV3ClosedTasksOpen] = useState(false);
+  const [isV3EmailMessagesOpen, setIsV3EmailMessagesOpen] = useState(false);
+  const [isV3ClientJournalOpen, setIsV3ClientJournalOpen] = useState(false);
   const [v2OpenSections, setV2OpenSections] = useState(() => createV2SectionState(false));
   const [v2LoadedSections, setV2LoadedSections] = useState(() => createV2SectionState(false));
   const [v2LoadingSections, setV2LoadingSections] = useState(() => createV2SectionState(false));
@@ -346,6 +354,7 @@ export default function TaskProfilePage() {
     const nextMode = !isV2Mode;
 
     setIsV2Mode(nextMode);
+    if (nextMode) setIsV3Mode(false);
     setWorkspaceModal(null);
 
     if (nextMode) {
@@ -353,6 +362,13 @@ export default function TaskProfilePage() {
       setOpenTaskDetailsId(null);
       resetV2SectionsState();
     }
+  };
+
+  const handleToggleV3Mode = () => {
+    const nextMode = !isV3Mode;
+    setIsV3Mode(nextMode);
+    if (nextMode) setIsV2Mode(false);
+    setWorkspaceModal(null);
   };
 
   const formatDateTime = (value) => {
@@ -1172,6 +1188,7 @@ export default function TaskProfilePage() {
     setSelectedPayload(null);
     setLastResentEmailId(null);
     setIsV2Mode(false);
+    setIsV3Mode(false);
 
     Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
       clearTimeout(timeoutId);
@@ -1373,6 +1390,7 @@ export default function TaskProfilePage() {
           </div>
 
           {/* General Info Row */}
+          {!isV3Mode ? (
           <div className="border-t border-slate-700/60 bg-black/20 px-5 sm:px-8 py-4 sm:py-5 flex flex-col xl:flex-row xl:items-stretch gap-6 backdrop-blur-sm">
             {/* Title block */}
             <div className="xl:w-1/4 shrink-0 flex items-center justify-between xl:flex-col xl:items-start xl:justify-center border-r-0 xl:border-r border-slate-700/50 xl:pr-6">
@@ -1418,6 +1436,63 @@ export default function TaskProfilePage() {
               </button>
             </div>
           </div>
+          ) : (
+          <div className="border-t border-slate-700/60 bg-black/20 px-5 sm:px-8 py-5 sm:py-6 flex flex-col gap-8 backdrop-blur-sm">
+            <div className="flex flex-col xl:flex-row gap-8">
+              
+              {/* V3 General Info block */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-4 bg-sky-500 rounded-sm"></div>
+                  <h2 className="text-sm sm:text-base uppercase tracking-widest font-bold text-white">{t("taskProfilePage.details.generalInfo")}</h2>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#0f1727]/50 rounded-xl p-4 border border-slate-700/50 shadow-inner">
+                  {headerProfileFacts.map((fact) => (
+                    <div key={fact.id} className="min-w-0 flex flex-col gap-1 relative group">
+                      <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-slate-400/90 font-medium">{fact.label}</p>
+                      <p className={`text-sm sm:text-[14px] font-semibold break-words ${fact.tone === "success" ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" : "text-slate-100"}`}>
+                        {fact.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* V3 Experience Info block */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-4 bg-emerald-500 rounded-sm"></div>
+                  <h2 className="text-sm sm:text-base uppercase tracking-widest font-bold text-white">{t("taskProfilePage.details.experienceInfo")}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-4 bg-[#0f1727]/50 rounded-xl p-4 border border-slate-700/50 shadow-inner">
+                  {[...experienceInfoLeftRows, ...experienceInfoRightRows].map((row) => (
+                    <div key={row.id} className="min-w-0 flex flex-col gap-1 relative group">
+                      <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-slate-400/90 font-medium">{row.label}</p>
+                      <p className="text-sm sm:text-[14px] font-semibold text-slate-100 break-words">{row.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* V3 Additional Info block */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-4 bg-purple-500 rounded-sm"></div>
+                  <h2 className="text-sm sm:text-base uppercase tracking-widest font-bold text-white">{t("taskProfilePage.details.additionalInfo")}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-4 bg-[#0f1727]/50 rounded-xl p-4 border border-slate-700/50 shadow-inner">
+                  {[...additionalInfoLeftRows, ...additionalInfoRightRows].map((row) => (
+                    <div key={row.id} className="min-w-0 flex flex-col gap-1 relative group">
+                      <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-slate-400/90 font-medium">{row.label}</p>
+                      <p className="text-sm sm:text-[14px] font-semibold text-slate-100 break-words">{row.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm overflow-hidden">
@@ -1431,70 +1506,91 @@ export default function TaskProfilePage() {
             </p>
           </div>
 
-          <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[700px] xl:h-[750px]">
+          <div className={`p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 ${isV3Mode && !isV3NoteAccordionOpen && !isV3TradingAccountsOpen ? "h-max" : "lg:h-[700px] xl:h-[750px]"}`}>
             
             {/* Left Column: Activity, Emails & Journal */}
-            <section className="lg:col-span-7 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col h-full overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-3 shrink-0">
+            <section className={`lg:col-span-7 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${isV3Mode && !isV3NoteAccordionOpen ? "h-max self-start" : "h-full"}`}>
+              <div 
+                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3NoteAccordionOpen ? "mb-2" : ""}` : "mb-3"}`}
+                onClick={isV3Mode ? () => setIsV3NoteAccordionOpen(!isV3NoteAccordionOpen) : undefined}
+              >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
                     <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.postNoteTitle")}</h3>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <textarea
-                    value={noteDraft}
-                    onChange={(event) => {
-                      setNoteDraft(event.target.value);
-                      if (noteError) setNoteError("");
-                    }}
-                    rows={2}
-                    placeholder={t("taskProfilePage.postNotePlaceholder")}
-                    className="w-full rounded-md border border-slate-600 bg-[#111a2c] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-500/70 resize-none"
-                  />
-
-                  <div className="flex items-center justify-between shrink-0">
-                    <p className="text-[11px] text-rose-300 min-h-[16px]">{noteError || " "}</p>
-                    <button
-                      type="button"
-                      onClick={handleShareNote}
-                      className="px-4 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-semibold tracking-wide transition-colors"
-                    >
-                      {t("taskProfilePage.shareInternally")}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2 border-t border-slate-700/60 pt-4 max-h-[500px] xl:max-h-[650px] overflow-y-auto pr-2 custom-scrollbar flex-1">
-                  {activityNotes.length === 0 ? (
-                    <p className="text-xs text-slate-400">{t("taskProfilePage.activityEmpty")}</p>
-                  ) : (
-                    activityNotes.map((entry) => (
-                      <article key={entry.id} className="rounded-md bg-[#162133] border border-slate-700 px-3 py-2 border-l-[3px] border-l-blue-500">
-                        <p className="text-sm text-slate-200 leading-relaxed font-medium">{entry.note}</p>
-                        <div className="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-300">{entry.actor}</span>
-                          <span>•</span>
-                          <span>{formatDateTime(entry.postedAt)}</span>
-                        </div>
-                      </article>
-                    ))
+                  {isV3Mode && (
+                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3NoteAccordionOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   )}
                 </div>
+
+                {(!isV3Mode || isV3NoteAccordionOpen) && (
+                  <>
+                    <div className="flex flex-col gap-3">
+                      <textarea
+                        value={noteDraft}
+                        onChange={(event) => {
+                          setNoteDraft(event.target.value);
+                          if (noteError) setNoteError("");
+                        }}
+                        rows={2}
+                        placeholder={t("taskProfilePage.postNotePlaceholder")}
+                        className="w-full rounded-md border border-slate-600 bg-[#111a2c] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-500/70 resize-none"
+                      />
+
+                      <div className="flex items-center justify-between shrink-0">
+                        <p className="text-[11px] text-rose-300 min-h-[16px]">{noteError || " "}</p>
+                        <button
+                          type="button"
+                          onClick={handleShareNote}
+                          className="px-4 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-semibold tracking-wide transition-colors"
+                        >
+                          {t("taskProfilePage.shareInternally")}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2 border-t border-slate-700/60 pt-4 max-h-[500px] xl:max-h-[650px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+                      {activityNotes.length === 0 ? (
+                        <p className="text-xs text-slate-400">{t("taskProfilePage.activityEmpty")}</p>
+                      ) : (
+                        activityNotes.map((entry) => (
+                          <article key={entry.id} className="rounded-md bg-[#162133] border border-slate-700 px-3 py-2 border-l-[3px] border-l-blue-500">
+                            <p className="text-sm text-slate-200 leading-relaxed font-medium">{entry.note}</p>
+                            <div className="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
+                              <span className="font-semibold text-slate-300">{entry.actor}</span>
+                              <span>•</span>
+                              <span>{formatDateTime(entry.postedAt)}</span>
+                            </div>
+                          </article>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
               </section>
 
             {/* Right Column: Accounts Stack */}
-            <section className="lg:col-span-5 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col h-full overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-3 shrink-0">
+            <section className={`lg:col-span-5 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${isV3Mode && !isV3TradingAccountsOpen ? "h-max self-start" : "h-full"}`}>
+              <div 
+                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3TradingAccountsOpen ? "mb-2" : ""}` : "mb-3"}`}
+                onClick={isV3Mode ? () => setIsV3TradingAccountsOpen(!isV3TradingAccountsOpen) : undefined}
+              >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
                     <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.accountsTasks.tradingAccounts")}</h3>
                   </div>
+                  {isV3Mode && (
+                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3TradingAccountsOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
                 </div>
 
-                <div className="flex flex-col flex-1 overflow-hidden">
-                  <div className="space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent custom-scrollbar flex-1 min-h-[150px]">
+                {(!isV3Mode || isV3TradingAccountsOpen) && (
+                  <div className="flex flex-col flex-1 overflow-hidden">
+                    <div className="space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent custom-scrollbar flex-1 min-h-[150px]">
                     {tradingAccountsRows.length === 0 ? (
                       <p className="text-xs text-slate-400 text-center py-2">{t("taskProfilePage.accountsTasks.noAccountsFound")}</p>
                     ) : (
@@ -1613,16 +1709,26 @@ export default function TaskProfilePage() {
                   </div>
 
                 </div>
+                )}
             </section>
           </div>
 
         </section>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <section className="rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-1 xl:h-[500px]">
-            <div className="flex flex-row items-center justify-between gap-3 mb-4 shrink-0">
+          <section className={`rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-1 ${isV3Mode && !isV3DocumentsOpen ? "h-max self-start" : "xl:h-[500px]"}`}>
+            <div 
+              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3DocumentsOpen ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={isV3Mode ? () => setIsV3DocumentsOpen(!isV3DocumentsOpen) : undefined}
+            >
               <h2 className="text-[17px] font-bold text-slate-800 dark:text-white">{t("taskProfilePage.details.documents")}</h2>
+              {isV3Mode && (
+                <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3DocumentsOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
             </div>
+            {(!isV3Mode || isV3DocumentsOpen) && (
             <div className="overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 dark:border-slate-700 custom-scrollbar flex-1 min-h-0">
               <table className="w-full text-xs sm:text-[13px] leading-snug">
                 <thead className="bg-slate-100 dark:bg-[#1b2942] text-slate-600 dark:text-slate-200 sticky top-0 z-10">
@@ -1685,12 +1791,18 @@ export default function TaskProfilePage() {
                 </tbody>
               </table>
             </div>
+            )}
           </section>
 
           {/* Tasks Container */}
-          <section className="rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm flex flex-col xl:col-span-1 overflow-hidden xl:h-[500px]">
+          <section className={`rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm flex flex-col xl:col-span-1 overflow-hidden ${isV3Mode && !isV3ClosedTasksOpen && !isV3OpenTasksOpen ? "h-max self-start" : "xl:h-[500px]"}`}>
             {/* Open Tasks */}
-            <details className="group p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent" open>
+            <details className="group p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent" open={!isV3Mode || isV3OpenTasksOpen} onClick={(e) => {
+              if (isV3Mode) {
+                e.preventDefault();
+                setIsV3OpenTasksOpen(!isV3OpenTasksOpen);
+              }
+            }}>
               <summary className="flex items-center justify-between text-[#5c468a] dark:text-[#a68de3] cursor-pointer list-none [&::-webkit-details-marker]:hidden shrink-0 select-none">
                 <div className="flex items-center">
                   <svg className="w-[18px] h-[18px] ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1700,29 +1812,40 @@ export default function TaskProfilePage() {
                   <h2 className="text-[17px] font-bold">Open Tasks</h2>
                 </div>
                 <div className="flex items-center text-slate-400 dark:text-slate-500">
-                  <svg className="w-5 h-5 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${(!isV3Mode || isV3OpenTasksOpen) ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </summary>
+              {(!isV3Mode || isV3OpenTasksOpen) && (
               <div className="mt-4 bg-[#e0f8fa] dark:bg-[#0c2a33] border border-[#b2e1e7] dark:border-[#1a5b6c] text-[#006e7d] dark:text-[#6ec5d3] p-3 sm:px-4 sm:py-3.5 rounded flex items-center justify-center text-sm font-medium shadow-sm">
                 <svg className="w-[18px] h-[18px] ltr:mr-2 rtl:ml-2 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                 </svg>
                 No tasks found.
               </div>
+              )}
             </details>
 
             {/* Closed Tasks */}
             <div className="p-4 sm:p-5 flex flex-col flex-1 min-h-0 bg-white dark:bg-[#0a101a]/30">
-              <div className="flex items-center text-slate-800 dark:text-white mb-4 shrink-0">
+              <div 
+                className={`flex items-center text-slate-800 dark:text-white shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClosedTasksOpen ? "mb-4" : ""}` : "mb-4"}`}
+                onClick={isV3Mode ? () => setIsV3ClosedTasksOpen(!isV3ClosedTasksOpen) : undefined}
+              >
                 <svg className="w-[18px] h-[18px] ltr:mr-2 rtl:ml-2 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                   <line x1="9" y1="3" x2="9" y2="21"/>
                 </svg>
-                <h2 className="text-[17px] font-bold">Closed Tasks</h2>
+                <h2 className="text-[17px] font-bold flex-1">Closed Tasks</h2>
+                {isV3Mode && (
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3ClosedTasksOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
               </div>
             
+              {(!isV3Mode || isV3ClosedTasksOpen) && (
               <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner custom-scrollbar">
                 <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                   <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -1753,17 +1876,30 @@ export default function TaskProfilePage() {
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-4 shrink-0">
-              <h2 className="text-xl font-bold text-white">{t("taskProfilePage.emailMessages")}</h2>
+          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${isV3Mode && !isV3EmailMessagesOpen ? "h-max self-start" : ""}`}>
+            <div 
+              className={`flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3EmailMessagesOpen ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={isV3Mode ? () => setIsV3EmailMessagesOpen(!isV3EmailMessagesOpen) : undefined}
+            >
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white">{t("taskProfilePage.emailMessages")}</h2>
+                {isV3Mode && (
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3EmailMessagesOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </div>
 
+              {(!isV3Mode || isV3EmailMessagesOpen) && (
               <select
                 value={emailTypeFilter}
                 onChange={(event) => setEmailTypeFilter(event.target.value)}
                 className="w-full xl:w-auto min-w-[200px] rounded-lg border border-slate-600 bg-[#0f1727] text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+                onClick={(e) => isV3Mode && e.stopPropagation()}
               >
                 {emailTypeOptions.map((option) => (
                   <option key={option} value={option}>
@@ -1771,8 +1907,10 @@ export default function TaskProfilePage() {
                   </option>
                 ))}
               </select>
+              )}
             </div>
 
+            {(!isV3Mode || isV3EmailMessagesOpen) && (
             <div className="overflow-auto rounded-xl border border-slate-700 max-h-[400px] custom-scrollbar flex-1">
               <table className="w-full text-sm min-w-[980px]">
                 <thead className="bg-[#1b2942] text-slate-200">
@@ -1821,20 +1959,37 @@ export default function TaskProfilePage() {
                 </tbody>
               </table>
             </div>
+            )}
           </section>
 
-          <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2">
-            <div className="flex flex-row items-center justify-between gap-3 mb-4 shrink-0">
-              <h2 className="text-xl font-bold text-white">{t("taskProfilePage.clientJournal")}</h2>
+          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${isV3Mode && !isV3ClientJournalOpen ? "h-max self-start" : ""}`}>
+            <div 
+              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClientJournalOpen ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={isV3Mode ? () => setIsV3ClientJournalOpen(!isV3ClientJournalOpen) : undefined}
+            >
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white">{t("taskProfilePage.clientJournal")}</h2>
+                {isV3Mode && (
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3ClientJournalOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </div>
+              {(!isV3Mode || isV3ClientJournalOpen) && (
               <button
                 type="button"
-                onClick={handleExportJournal}
+                onClick={(e) => {
+                  if (isV3Mode) e.stopPropagation();
+                  handleExportJournal();
+                }}
                 className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shrink-0"
               >
                 {t("taskProfilePage.export")}
               </button>
+              )}
             </div>
 
+            {(!isV3Mode || isV3ClientJournalOpen) && (
             <div className="overflow-auto rounded-xl border border-slate-700 max-h-[400px] custom-scrollbar flex-1">
               <table className="w-full text-sm min-w-[900px]">
                 <thead className="bg-[#1b2942] text-slate-200">
@@ -1875,9 +2030,11 @@ export default function TaskProfilePage() {
                 </tbody>
               </table>
             </div>
+            )}
           </section>
         </div>
 
+        {!isV3Mode && (
         <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 mt-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
             <div>
@@ -1949,6 +2106,7 @@ export default function TaskProfilePage() {
             </button>
           </div>
         </section>
+        )}
 
         <section className="hidden">
           <nav className="flex flex-wrap items-center gap-2" aria-label="Profile sections">
@@ -2573,20 +2731,36 @@ export default function TaskProfilePage() {
         </section>
       </main>
 
-      <button
-        type="button"
-        onClick={handleToggleV2Mode}
-        className={`fixed top-4 ${isRtl ? "left-4" : "right-4"} z-[95] inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
-          isV2Mode
-            ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30"
-            : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
-        }`}
-      >
-        <span>V2</span>
-        <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
-          {isV2Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
-        </span>
-      </button>
+      <div className={`fixed top-4 ${isRtl ? "left-4" : "right-4"} z-[95] flex items-center gap-2`}>
+        <button
+          type="button"
+          onClick={handleToggleV2Mode}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+            isV2Mode
+              ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30"
+              : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+          }`}
+        >
+          <span>V2</span>
+          <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+            {isV2Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleToggleV3Mode}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+            isV3Mode
+              ? "border-purple-500/60 bg-purple-500/20 text-purple-100 hover:bg-purple-500/30"
+              : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+          }`}
+        >
+          <span>V3</span>
+          <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+            {isV3Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+          </span>
+        </button>
+      </div>
 
       {isV2Mode ? (
         <section className="fixed inset-0 z-[80] overflow-y-auto bg-[#020617]/95 backdrop-blur-sm px-4 sm:px-6 py-16">
