@@ -295,7 +295,18 @@ export default function TaskProfilePage() {
   const [isV3EmailMessagesOpen, setIsV3EmailMessagesOpen] = useState(false);
   const [isV3ClientJournalOpen, setIsV3ClientJournalOpen] = useState(false);
   const [isV4Mode, setIsV4Mode] = useState(false);
+  const [isV5Mode, setIsV5Mode] = useState(false);
+  const [isV5aMode, setIsV5aMode] = useState(false);
   const [v4OpenSections, setV4OpenSections] = useState({
+    notes: false,
+    trading: false,
+    documents: false,
+    openTasks: false,
+    closedTasks: false,
+    emails: false,
+    journal: false,
+  });
+  const [v5OpenSections, setV5OpenSections] = useState({
     notes: false,
     trading: false,
     documents: false,
@@ -367,6 +378,7 @@ export default function TaskProfilePage() {
     if (nextMode) {
       setIsV3Mode(false);
       setIsV4Mode(false);
+      setIsV5Mode(false);
     }
     setWorkspaceModal(null);
 
@@ -383,6 +395,7 @@ export default function TaskProfilePage() {
     if (nextMode) {
       setIsV2Mode(false);
       setIsV4Mode(false);
+      setIsV5Mode(false);
     }
     setWorkspaceModal(null);
   };
@@ -393,6 +406,51 @@ export default function TaskProfilePage() {
     if (nextMode) {
       setIsV2Mode(false);
       setIsV3Mode(false);
+      setIsV5Mode(false);
+    }
+    setWorkspaceModal(null);
+  };
+
+  const handleToggleV5Mode = () => {
+    const nextMode = !isV5Mode;
+    setIsV5Mode(nextMode);
+    if (!nextMode) {
+      setIsV5aMode(false);
+    }
+    if (nextMode) {
+      setIsV2Mode(false);
+      setIsV3Mode(false);
+      setIsV4Mode(false);
+      setV5OpenSections({
+        notes: false,
+        trading: false,
+        documents: false,
+        openTasks: false,
+        closedTasks: false,
+        emails: false,
+        journal: false,
+      });
+    }
+    setWorkspaceModal(null);
+  };
+
+  const handleToggleV5aMode = () => {
+    const nextMode = !isV5aMode;
+    setIsV5aMode(nextMode);
+    if (nextMode) {
+      setIsV2Mode(false);
+      setIsV3Mode(false);
+      setIsV4Mode(false);
+      setIsV5Mode(true);
+      setV5OpenSections({
+        notes: false,
+        trading: false,
+        documents: false,
+        openTasks: false,
+        closedTasks: false,
+        emails: false,
+        journal: false,
+      });
     }
     setWorkspaceModal(null);
   };
@@ -403,6 +461,30 @@ export default function TaskProfilePage() {
       [section]: !prev[section],
     }));
   };
+
+  const toggleV5Section = (section) => {
+    setV5OpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const isV3OrV5Mode = isV3Mode || isV5Mode;
+  const isNotesOpen = isV5Mode ? v5OpenSections.notes : isV3NoteAccordionOpen;
+  const isTradingOpen = isV5Mode ? v5OpenSections.trading : isV3TradingAccountsOpen;
+  const isDocumentsOpen = isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen;
+  const isOpenTasksOpen = isV5Mode ? v5OpenSections.openTasks : isV3OpenTasksOpen;
+  const isClosedTasksOpen = isV5Mode ? v5OpenSections.closedTasks : isV3ClosedTasksOpen;
+  const isEmailsOpen = isV5Mode ? v5OpenSections.emails : isV3EmailMessagesOpen;
+  const isJournalOpen = isV5Mode ? v5OpenSections.journal : isV3ClientJournalOpen;
+
+  const toggleNotes = () => (isV5Mode ? toggleV5Section("notes") : setIsV3NoteAccordionOpen(!isV3NoteAccordionOpen));
+  const toggleTrading = () => (isV5Mode ? toggleV5Section("trading") : setIsV3TradingAccountsOpen(!isV3TradingAccountsOpen));
+  const toggleDocuments = () => (isV5Mode ? toggleV5Section("documents") : setIsV3DocumentsOpen(!isV3DocumentsOpen));
+  const toggleOpenTasks = () => (isV5Mode ? toggleV5Section("openTasks") : setIsV3OpenTasksOpen(!isV3OpenTasksOpen));
+  const toggleClosedTasks = () => (isV5Mode ? toggleV5Section("closedTasks") : setIsV3ClosedTasksOpen(!isV3ClosedTasksOpen));
+  const toggleEmails = () => (isV5Mode ? toggleV5Section("emails") : setIsV3EmailMessagesOpen(!isV3EmailMessagesOpen));
+  const toggleJournal = () => (isV5Mode ? toggleV5Section("journal") : setIsV3ClientJournalOpen(!isV3ClientJournalOpen));
 
   const formatDateTime = (value) => {
     const parsed = parseDateValue(value);
@@ -734,6 +816,11 @@ export default function TaskProfilePage() {
         { id: "9801101", type: "Demo MT5" },
         { id: "9801102", type: "Demo Standard" },
         { id: "9801103", type: "Demo Zero" },
+        { id: "9801104", type: "Demo Pro" },
+        { id: "9801105", type: "Demo VIP" },
+        { id: "9801106", type: "Demo Cent" },
+        { id: "9801107", type: "Demo Elite" },
+        { id: "9801108", type: "Demo ECN" },
       ],
     },
     {
@@ -743,6 +830,12 @@ export default function TaskProfilePage() {
       rows: [
         { id: "7702211", type: "Investor Alpha" },
         { id: "7702212", type: "Investor Prime" },
+        { id: "7702213", type: "Investor Plus" },
+        { id: "7702214", type: "Investor Max" },
+        { id: "7702215", type: "Investor Pro" },
+        { id: "7702216", type: "Investor Elite" },
+        { id: "7702217", type: "Investor VIP" },
+        { id: "7702218", type: "Investor X" },
       ],
     },
     {
@@ -752,6 +845,12 @@ export default function TaskProfilePage() {
       rows: [
         { id: "6603311", type: "IB Standard" },
         { id: "6603312", type: "IB Premium" },
+        { id: "6603313", type: "IB Pro" },
+        { id: "6603314", type: "IB Elite" },
+        { id: "6603315", type: "IB Master" },
+        { id: "6603316", type: "IB Gold" },
+        { id: "6603317", type: "IB Platinum" },
+        { id: "6603318", type: "IB Diamond" },
       ],
     },
     {
@@ -761,6 +860,12 @@ export default function TaskProfilePage() {
       rows: [
         { id: "5504411", type: "MAM Pro" },
         { id: "5504412", type: "MAM Master" },
+        { id: "5504413", type: "MAM Elite" },
+        { id: "5504414", type: "MAM Prime" },
+        { id: "5504415", type: "MAM Advanced" },
+        { id: "5504416", type: "MAM Institutional" },
+        { id: "5504417", type: "MAM Corporate" },
+        { id: "5504418", type: "MAM Wealth" },
       ],
     },
     {
@@ -770,6 +875,12 @@ export default function TaskProfilePage() {
       rows: [
         { id: "4405511", type: "Wallet USD" },
         { id: "4405512", type: "Wallet EUR" },
+        { id: "4405513", type: "Wallet GBP" },
+        { id: "4405514", type: "Wallet JPY" },
+        { id: "4405515", type: "Wallet AUD" },
+        { id: "4405516", type: "Wallet CAD" },
+        { id: "4405517", type: "Wallet CHF" },
+        { id: "4405518", type: "Wallet AED" },
       ],
     },
   ]), [t]);
@@ -1272,6 +1383,7 @@ export default function TaskProfilePage() {
     setIsV2Mode(false);
     setIsV3Mode(false);
     setIsV4Mode(false);
+    setIsV5Mode(false);
 
     Object.values(v2LoadTimeoutsRef.current).forEach((timeoutId) => {
       clearTimeout(timeoutId);
@@ -1473,7 +1585,7 @@ export default function TaskProfilePage() {
           </div>
 
           {/* General Info Row */}
-          {(!isV3Mode && !isV4Mode) ? (
+          {(!(isV3Mode || isV5Mode || isV5aMode) && !isV4Mode) ? (
           <div className="border-t border-slate-700/60 bg-black/20 px-5 sm:px-8 py-4 sm:py-5 flex flex-col xl:flex-row xl:items-stretch gap-6 backdrop-blur-sm">
             {/* Title block */}
             <div className="xl:w-1/4 shrink-0 flex items-center justify-between xl:flex-col xl:items-start xl:justify-center border-r-0 xl:border-r border-slate-700/50 xl:pr-6">
@@ -1541,7 +1653,7 @@ export default function TaskProfilePage() {
                 </div>
               </div>
 
-              {/* V3 Experience Info block */}
+              {/* V3 Experience block */}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1.5 h-4 bg-emerald-500 rounded-sm"></div>
@@ -1574,6 +1686,103 @@ export default function TaskProfilePage() {
               </div>
 
             </div>
+          </div>
+          ) : (isV5Mode || isV5aMode) ? (
+          <div className="border-t border-slate-700/60 bg-gradient-to-b from-[#0f1727]/80 to-transparent px-5 sm:px-8 py-6 flex flex-col gap-6 backdrop-blur-sm relative overflow-hidden">
+            {/* V5 Header - Same as V4 */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-2 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 shadow-inner flex items-center justify-center text-slate-300">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-wide">Client Profile</h2>
+                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Active Profile
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 bg-[#0a101a]/50 p-2 rounded-xl border border-slate-700/50">
+                 {headerProfileFacts.slice(0,3).map((fact) => (
+                    <div key={fact.id} className="flex flex-col px-3 border-r border-slate-700/50 last:border-0">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-500">{fact.label}</p>
+                      <p className="text-sm font-bold text-slate-200 mt-0.5">{fact.value}</p>
+                    </div>
+                 ))}
+              </div>
+            </div>
+
+            {/* V5: 4 Cards Grid (V4 Style) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              
+              {/* General Info Card */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">{t("taskProfilePage.details.generalInfo", "General Info")}</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {headerProfileFacts.map((fact) => (
+                    <div key={fact.id} className="flex items-center justify-between gap-4">
+                      <span className="text-[11px] text-slate-400 shrink-0">{fact.label}</span>
+                      <span className="text-xs font-semibold text-white text-right truncate" title={fact.value}>{fact.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Experience Card */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">{t("taskProfilePage.details.experienceInfo", "Experience")}</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {experienceInfoLeftRows.map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trade Profile Card */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2-4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">Trade Profile</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {experienceInfoRightRows.map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Regulatory Card */}
+              <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-300">Regulatory</h3>
+                </div>
+                <div className="space-y-3.5">
+                  {[...additionalInfoLeftRows, ...additionalInfoRightRows].map((row) => (
+                    <div key={row.id} className="flex flex-col gap-0.5">
+                      <span className="text-[10px] uppercase text-slate-500">{row.label}</span>
+                      <span className="text-[13px] font-medium text-slate-200">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            
           </div>
           ) : (
           <div className="border-t border-slate-700/60 bg-gradient-to-b from-[#0f1727]/80 to-transparent px-5 sm:px-8 py-6 flex flex-col gap-6 backdrop-blur-sm relative overflow-hidden">
@@ -1624,7 +1833,7 @@ export default function TaskProfilePage() {
                 </div>
               </div>
 
-              {/* Comprehensive Experience Info */}
+              {/* Comprehensive Experience */}
               <div className="bg-[#111a2c]/80 border border-slate-700/60 rounded-2xl p-5 shadow-sm hover:border-slate-500/50 transition-colors">
                 <div className="flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
                   <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
@@ -1679,7 +1888,8 @@ export default function TaskProfilePage() {
 
         {!isV4Mode ? (
           <>
-        <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm overflow-hidden">
+        <section className={isV5Mode ? "mt-6 flex flex-col gap-4" : `rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm overflow-hidden`}>
+          {!isV5Mode && (
           <div className="px-4 sm:px-6 py-4 border-b border-slate-700/80">
             <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("taskProfilePage.tabs.overview")}</p>
             <h2 className="text-2xl sm:text-3xl font-semibold text-white mt-1">{t("taskProfilePage.accountSnapshot")}</h2>
@@ -1689,27 +1899,28 @@ export default function TaskProfilePage() {
                 : "Core sections are visible directly. Open the remaining advanced sections from the popup buttons below."}
             </p>
           </div>
+          )}
 
-          <div className={`p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 ${isV3Mode && !isV3NoteAccordionOpen && !isV3TradingAccountsOpen ? "h-max" : "lg:h-[700px] xl:h-[750px]"}`}>
+          <div className={isV5Mode ? "flex flex-col gap-4" : `p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 ${((isV3Mode || isV5Mode) && !isNotesOpen && !isTradingOpen) ? "h-max" : "lg:h-[700px] xl:h-[750px]"}`}>
             
             {/* Left Column: Activity, Emails & Journal */}
-            <section className={`lg:col-span-7 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${isV3Mode && !isV3NoteAccordionOpen ? "h-max self-start" : "h-full"}`}>
+            <section className={`${isV5Mode ? "w-full" : "lg:col-span-7"} rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${(isV3Mode || isV5Mode) && !isV3NoteAccordionOpen && !isV5Mode ? "h-max self-start" : isV5Mode ? "h-auto" : "h-full"}`}>
               <div 
-                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3NoteAccordionOpen ? "mb-2" : ""}` : "mb-3"}`}
-                onClick={isV3Mode ? () => setIsV3NoteAccordionOpen(!isV3NoteAccordionOpen) : undefined}
+                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3NoteAccordionOpen ? "mb-2" : ""}` : "mb-3"}`}
+                onClick={(isV3Mode || isV5Mode) ? () => setIsV3NoteAccordionOpen(!isV3NoteAccordionOpen) : undefined}
               >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
                     <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.postNoteTitle")}</h3>
                   </div>
-                  {isV3Mode && (
+                  {(isV3Mode || isV5Mode) && (
                     <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3NoteAccordionOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   )}
                 </div>
 
-                {(!isV3Mode || isV3NoteAccordionOpen) && (
+                {(!(isV3Mode || isV5Mode) || isV3NoteAccordionOpen) && (
                   <>
                     <div className="flex flex-col gap-3">
                       <textarea
@@ -1735,7 +1946,7 @@ export default function TaskProfilePage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 space-y-2 border-t border-slate-700/60 pt-4 max-h-[500px] xl:max-h-[650px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+                    <div className={`mt-4 space-y-2 border-t border-slate-700/60 pt-4 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar ${isV5Mode ? "max-h-[300px]" : "max-h-[220px]"}`}>
                       {activityNotes.length === 0 ? (
                         <p className="text-xs text-slate-400">{t("taskProfilePage.activityEmpty")}</p>
                       ) : (
@@ -1756,25 +1967,25 @@ export default function TaskProfilePage() {
               </section>
 
             {/* Right Column: Accounts Stack */}
-            <section className={`lg:col-span-5 rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${isV3Mode && !isV3TradingAccountsOpen ? "h-max self-start" : "h-full"}`}>
+            <section className={`${isV5Mode ? "w-full" : "lg:col-span-5"} rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${(isV3Mode || isV5Mode) && !isV3TradingAccountsOpen && !isV5Mode ? "h-max self-start" : isV5Mode ? "h-auto" : "h-full"}`}>
               <div 
-                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3TradingAccountsOpen ? "mb-2" : ""}` : "mb-3"}`}
-                onClick={isV3Mode ? () => setIsV3TradingAccountsOpen(!isV3TradingAccountsOpen) : undefined}
+                className={`flex flex-wrap items-center justify-between gap-3 shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3TradingAccountsOpen ? "mb-2" : ""}` : "mb-3"}`}
+                onClick={(isV3Mode || isV5Mode) ? () => setIsV3TradingAccountsOpen(!isV3TradingAccountsOpen) : undefined}
               >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 bg-purple-500 rounded-full"></div>
                     <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.accountsTasks.tradingAccounts")}</h3>
                   </div>
-                  {isV3Mode && (
+                  {(isV3Mode || isV5Mode) && (
                     <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3TradingAccountsOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   )}
                 </div>
 
-                {(!isV3Mode || isV3TradingAccountsOpen) && (
+                {(!(isV3Mode || isV5Mode) || isV3TradingAccountsOpen) && (
                   <div className="flex flex-col flex-1 overflow-hidden">
-                    <div className="space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent custom-scrollbar flex-1 min-h-[150px]">
+                    <div className={`space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent custom-scrollbar flex-1 min-h-0 ${isV5Mode ? "max-h-[300px]" : "min-h-[150px] max-h-[260px]"}`}>
                     {tradingAccountsRows.length === 0 ? (
                       <p className="text-xs text-slate-400 text-center py-2">{t("taskProfilePage.accountsTasks.noAccountsFound")}</p>
                     ) : (
@@ -1793,126 +2004,192 @@ export default function TaskProfilePage() {
                     )}
                   </div>
 
-                  {/* Additional Accounts Accordion Group inside Trading Accounts section */}
-                  <div className="mt-4 border-t border-slate-700/80 pt-4 shrink-0">
-                    <div className="rounded-xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col">
-                      <div className="divide-y divide-slate-700/60 max-h-[300px] overflow-y-auto custom-scrollbar">
-                    
-                        {/* Demo Accounts */}
-                        <details className="group">
-                          <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-1.5 h-3.5 bg-emerald-400 rounded-full"></div>
-                              <span className="text-sm font-semibold tracking-wide text-slate-200">Demo Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">0</span>
-                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                          </summary>
-                          <div className="px-4 py-5 bg-[#0a101a] flex flex-col items-center justify-center text-center border-t border-slate-700/50 shadow-inner">
-                            <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
-                          </div>
-                        </details>
-
-                        {/* Investor Accounts */}
-                        <details className="group">
-                          <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-1.5 h-3.5 bg-blue-500 rounded-full"></div>
-                              <span className="text-sm font-semibold tracking-wide text-slate-200">Investor Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">0</span>
-                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                          </summary>
-                          <div className="px-4 py-5 bg-[#0a101a] flex flex-col items-center justify-center text-center border-t border-slate-700/50 shadow-inner">
-                            <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
-                          </div>
-                        </details>
-
-                        {/* IB Accounts */}
-                        <details className="group">
-                          <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-1.5 h-3.5 bg-amber-500 rounded-full"></div>
-                              <span className="text-sm font-semibold tracking-wide text-slate-200">IB Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">0</span>
-                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                          </summary>
-                          <div className="px-4 py-5 bg-[#0a101a] flex flex-col items-center justify-center text-center border-t border-slate-700/50 shadow-inner">
-                            <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
-                          </div>
-                        </details>
-
-                        {/* MAM Accounts */}
-                        <details className="group">
-                          <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-1.5 h-3.5 bg-rose-500 rounded-full"></div>
-                              <span className="text-sm font-semibold tracking-wide text-slate-200">MAM Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">0</span>
-                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                          </summary>
-                          <div className="px-4 py-5 bg-[#0a101a] flex flex-col items-center justify-center text-center border-t border-slate-700/50 shadow-inner">
-                            <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
-                          </div>
-                        </details>
-
-                        {/* Wallet Accounts */}
-                        <details className="group">
-                          <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-1.5 h-3.5 bg-indigo-500 rounded-full"></div>
-                              <span className="text-sm font-semibold tracking-wide text-slate-200">Wallet Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">0</span>
-                              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                          </summary>
-                          <div className="px-4 py-5 bg-[#0a101a] flex flex-col items-center justify-center text-center border-t border-slate-700/50 shadow-inner">
-                            <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
-                          </div>
-                        </details>
-
+                  {/* Additional Accounts Group inside Trading Accounts section */}
+                  <div className={`mt-4 border-t border-slate-700/80 pt-4 shrink-0 ${isV5aMode ? "flex overflow-x-auto gap-4 pb-2 custom-scrollbar" : ""}`}>
+                    {!isV5aMode ? (
+                      <div className="rounded-xl border border-slate-700 bg-[#0f1727] shadow-sm overflow-hidden flex flex-col">
+                        <div className="divide-y divide-slate-700/60 max-h-[300px] overflow-y-auto custom-scrollbar">
+                          {v4AdditionalAccountSections.map((section) => (
+                            <details key={section.id} className="group">
+                              <summary className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#162133] transition-colors [&::-webkit-details-marker]:hidden select-none outline-none">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-1.5 h-3.5 rounded-full ${section.dotClass}`}></div>
+                                  <span className="text-sm font-semibold tracking-wide text-slate-200">{section.label}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded border border-slate-600/50">
+                                    {section.rows.length}
+                                  </span>
+                                  <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                </div>
+                              </summary>
+                              <div className="px-4 py-3 bg-[#0a101a] border-t border-slate-700/50 shadow-inner">
+                                {section.rows.length === 0 ? (
+                                  <div className="flex flex-col items-center justify-center text-center py-2">
+                                    <svg className="w-6 h-6 text-slate-500 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <p className="text-xs text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {section.rows.map((row) => (
+                                      <div key={row.id} className="flex items-center justify-between rounded bg-[#0f1727] px-3 py-2 border border-slate-700/30">
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-bold text-sky-300">#{row.id}</span>
+                                          <span className="text-[10px] text-slate-400 uppercase mt-0.5">{row.type}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </details>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        {v4AdditionalAccountSections.map((section) => (
+                          <div key={section.id} className="rounded-xl border border-slate-700 bg-[#0a101a] shadow-inner flex flex-col flex-1 min-w-[200px] shrink-0">
+                            <div className="flex items-center justify-between p-3 border-b border-slate-700/60 bg-[#0f1727] rounded-t-xl">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-1.5 h-3.5 rounded-full ${section.dotClass}`}></div>
+                                <span className="text-xs font-bold tracking-wide text-slate-200 uppercase">{section.label}</span>
+                              </div>
+                              <span className="bg-slate-700/60 text-slate-300 font-bold text-[10px] px-2 py-0.5 rounded border border-slate-600/50">
+                                {section.rows.length}
+                              </span>
+                            </div>
+                            <div className="p-3 overflow-y-auto max-h-[200px] custom-scrollbar flex-1">
+                              {section.rows.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center text-center h-full opacity-60">
+                                  <svg className="w-5 h-5 text-slate-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                  <p className="text-[10px] text-slate-400">{t("taskProfilePage.accountsTasks.noAccountsFound") || "No accounts found."}</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {section.rows.map((row) => (
+                                    <div key={row.id} className="flex items-center justify-between rounded bg-[#162133] px-2.5 py-1.5 border border-slate-700/50">
+                                      <div className="flex flex-col">
+                                        <span className="text-[11px] font-bold text-sky-300">#{row.id}</span>
+                                        <span className="text-[9px] text-slate-400 uppercase">{row.type}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
 
                 </div>
                 )}
             </section>
+
+            {/* V5: Side-by-side Open/Closed Tasks */}
+            {isV5Mode && (
+              <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-4 h-max">
+                <section className={`rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${!v5OpenSections.openTasks ? "h-max self-start" : "h-[400px]"}`}>
+                  <div 
+                    className={`flex items-center justify-between gap-2 shrink-0 cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${v5OpenSections.openTasks ? "mb-2" : ""}`}
+                    onClick={() => toggleV5Section("openTasks")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
+                      <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.accountsTasks.openTasks")}</h3>
+                    </div>
+                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${v5OpenSections.openTasks ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {v5OpenSections.openTasks && (
+                    <div className="flex flex-col flex-1 overflow-hidden mt-1">
+                      <div className="space-y-2 overflow-y-auto pr-1.5 custom-scrollbar flex-1 min-h-0">
+                        {openTasksRows.length === 0 ? (
+                          <p className="text-xs text-slate-400 text-center py-4">{t("taskProfilePage.accountsTasks.noTasksData")}</p>
+                        ) : (
+                          openTasksRows.map((row) => (
+                            <div key={row.id} className="flex flex-col rounded-md bg-[#162133] px-3 py-2 border border-slate-700/50 cursor-pointer hover:bg-[#19273d] transition-colors" onClick={() => setOpenTaskDetailsId(row.taskId)}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold text-sky-300">{row.type}</span>
+                                <span className="text-[10px] text-slate-400">{row.dateCreated}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] text-slate-300">{t("taskProfilePage.accountsTasks.assignedTo")}: {row.assignedTo}</span>
+                                <span className="text-[10px] uppercase font-semibold text-amber-400">{row.status}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                <section className={`rounded-xl border border-slate-700 bg-[#0f1727] p-4 flex flex-col overflow-hidden ${!v5OpenSections.closedTasks ? "h-max self-start" : "h-[400px]"}`}>
+                  <div 
+                    className={`flex items-center justify-between gap-2 shrink-0 cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${v5OpenSections.closedTasks ? "mb-2" : ""}`}
+                    onClick={() => toggleV5Section("closedTasks")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
+                      <h3 className="text-sm uppercase tracking-wide font-semibold text-white">{t("taskProfilePage.accountsTasks.closedTasks")}</h3>
+                    </div>
+                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${v5OpenSections.closedTasks ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {v5OpenSections.closedTasks && (
+                    <div className="flex flex-col flex-1 overflow-hidden mt-1">
+                      <div className="space-y-2 overflow-y-auto pr-1.5 custom-scrollbar flex-1 min-h-0">
+                        {closedTasksRows.length === 0 ? (
+                          <p className="text-xs text-slate-400 text-center py-4">{t("taskProfilePage.accountsTasks.noTasksData")}</p>
+                        ) : (
+                          closedTasksRows.map((row) => (
+                            <div key={row.id} className="flex flex-col rounded-md bg-[#162133] px-3 py-2 border border-slate-700/50 cursor-pointer hover:bg-[#19273d] transition-colors" onClick={() => setOpenTaskDetailsId(row.taskId)}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold text-sky-300">{row.type}</span>
+                                <span className="text-[10px] text-slate-400">{row.dateCreated}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] text-slate-300">{t("taskProfilePage.accountsTasks.assignedTo")}: {row.assignedTo}</span>
+                                <span className="text-[10px] uppercase font-semibold text-emerald-400">{row.status}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+
           </div>
 
         </section>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <section className={`rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-1 ${isV3Mode && !isV3DocumentsOpen ? "h-max self-start" : "xl:h-[500px]"}`}>
+          <section className={`rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col ${isV5Mode ? "xl:col-span-2" : "xl:col-span-1"} ${(isV3Mode || isV5Mode) && !(isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen) ? "h-max self-start" : "xl:h-[500px]"}`}>
             <div 
-              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3DocumentsOpen ? "mb-4" : ""}` : "mb-4"}`}
-              onClick={isV3Mode ? () => setIsV3DocumentsOpen(!isV3DocumentsOpen) : undefined}
+              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${(isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen) ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={(isV3Mode || isV5Mode) ? () => (isV5Mode ? toggleV5Section("documents") : setIsV3DocumentsOpen(!isV3DocumentsOpen)) : undefined}
             >
-              <h2 className="text-[17px] font-bold text-slate-800 dark:text-white">{t("taskProfilePage.details.documents")}</h2>
-              {isV3Mode && (
-                <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3DocumentsOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-2">
+                {isV5Mode && <div className="w-1.5 h-4 bg-indigo-500 rounded-full"></div>}
+                <h2 className={isV5Mode ? "text-sm uppercase tracking-wide font-semibold text-white" : "text-[17px] font-bold text-slate-800 dark:text-white"}>
+                  {t("taskProfilePage.details.documents")}
+                </h2>
+              </div>
+              {(isV3Mode || isV5Mode) && (
+                <svg className={`w-5 h-5 text-slate-400 transition-transform ${(isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen) ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               )}
             </div>
-            {(!isV3Mode || isV3DocumentsOpen) && (
+            {(!(isV3Mode || isV5Mode) || (isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen)) && (
             <div className="overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 dark:border-slate-700 custom-scrollbar flex-1 min-h-0">
               <table className="w-full text-xs sm:text-[13px] leading-snug">
                 <thead className="bg-slate-100 dark:bg-[#1b2942] text-slate-600 dark:text-slate-200 sticky top-0 z-10">
@@ -1979,12 +2256,16 @@ export default function TaskProfilePage() {
           </section>
 
           {/* Tasks Container */}
-          <section className={`rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm flex flex-col xl:col-span-1 overflow-hidden ${isV3Mode && !isV3ClosedTasksOpen && !isV3OpenTasksOpen ? "h-max self-start" : "xl:h-[500px]"}`}>
+          <section className={`${isV5Mode ? "hidden" : "flex"} rounded-2xl border border-slate-700 bg-white dark:bg-[#111a2c] shadow-sm flex-col xl:col-span-1 overflow-hidden ${(isV3Mode || isV5Mode) && !isV3ClosedTasksOpen && !isV3OpenTasksOpen ? "h-max self-start" : "xl:h-[500px]"}`}>
             {/* Open Tasks */}
-            <details className="group p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent" open={!isV3Mode || isV3OpenTasksOpen} onClick={(e) => {
-              if (isV3Mode) {
+            <details className="group p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent" open={(!(isV3Mode || isV5Mode) || (isV5Mode ? v5OpenSections.openTasks : isV3OpenTasksOpen))} onClick={(e) => {
+              if (isV3Mode || isV5Mode) {
                 e.preventDefault();
-                setIsV3OpenTasksOpen(!isV3OpenTasksOpen);
+                if (isV5Mode) {
+                  toggleV5Section("openTasks");
+                } else {
+                  setIsV3OpenTasksOpen(!isV3OpenTasksOpen);
+                }
               }
             }}>
               <summary className="flex items-center justify-between text-[#5c468a] dark:text-[#a68de3] cursor-pointer list-none [&::-webkit-details-marker]:hidden shrink-0 select-none">
@@ -1996,12 +2277,12 @@ export default function TaskProfilePage() {
                   <h2 className="text-[17px] font-bold">Open Tasks</h2>
                 </div>
                 <div className="flex items-center text-slate-400 dark:text-slate-500">
-                  <svg className={`w-5 h-5 transition-transform duration-200 ${(!isV3Mode || isV3OpenTasksOpen) ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${((!(isV3Mode || isV5Mode) || (isV5Mode ? v5OpenSections.openTasks : isV3OpenTasksOpen))) ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </summary>
-              {(!isV3Mode || isV3OpenTasksOpen) && (
+              {((!(isV3Mode || isV5Mode) || (isV5Mode ? v5OpenSections.openTasks : isV3OpenTasksOpen))) && (
               <div className="mt-4 bg-[#e0f8fa] dark:bg-[#0c2a33] border border-[#b2e1e7] dark:border-[#1a5b6c] text-[#006e7d] dark:text-[#6ec5d3] p-3 sm:px-4 sm:py-3.5 rounded flex items-center justify-center text-sm font-medium shadow-sm">
                 <svg className="w-[18px] h-[18px] ltr:mr-2 rtl:ml-2 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -2014,22 +2295,22 @@ export default function TaskProfilePage() {
             {/* Closed Tasks */}
             <div className="p-4 sm:p-5 flex flex-col flex-1 min-h-0 bg-white dark:bg-[#0a101a]/30">
               <div 
-                className={`flex items-center text-slate-800 dark:text-white shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClosedTasksOpen ? "mb-4" : ""}` : "mb-4"}`}
-                onClick={isV3Mode ? () => setIsV3ClosedTasksOpen(!isV3ClosedTasksOpen) : undefined}
+                className={`flex items-center text-slate-800 dark:text-white shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClosedTasksOpen ? "mb-4" : ""}` : "mb-4"}`}
+                onClick={(isV3Mode || isV5Mode) ? () => setIsV3ClosedTasksOpen(!isV3ClosedTasksOpen) : undefined}
               >
                 <svg className="w-[18px] h-[18px] ltr:mr-2 rtl:ml-2 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                   <line x1="9" y1="3" x2="9" y2="21"/>
                 </svg>
                 <h2 className="text-[17px] font-bold flex-1">Closed Tasks</h2>
-                {isV3Mode && (
+                {(isV3Mode || isV5Mode) && (
                   <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3ClosedTasksOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
               </div>
             
-              {(!isV3Mode || isV3ClosedTasksOpen) && (
+              {((!(isV3Mode || isV5Mode) || isV3ClosedTasksOpen)) && (
               <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner custom-scrollbar">
                 <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                   <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -2064,37 +2345,40 @@ export default function TaskProfilePage() {
             </div>
           </section>
 
-          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${isV3Mode && !isV3EmailMessagesOpen ? "h-max self-start" : ""}`}>
+          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${(isV3Mode || isV5Mode) && !isV3EmailMessagesOpen ? "h-max self-start" : ""}`}>
             <div 
-              className={`flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3EmailMessagesOpen ? "mb-4" : ""}` : "mb-4"}`}
-              onClick={isV3Mode ? () => setIsV3EmailMessagesOpen(!isV3EmailMessagesOpen) : undefined}
+              className={`flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3EmailMessagesOpen ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={(isV3Mode || isV5Mode) ? () => setIsV3EmailMessagesOpen(!isV3EmailMessagesOpen) : undefined}
             >
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">{t("taskProfilePage.emailMessages")}</h2>
-                {isV3Mode && (
-                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3EmailMessagesOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isV5Mode && <div className="w-1.5 h-4 bg-orange-500 rounded-full"></div>}
+                <h2 className={isV5Mode ? "text-sm uppercase tracking-wide font-semibold text-white" : "text-xl font-bold text-white"}>{t("taskProfilePage.emailMessages")}</h2>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 w-full xl:w-auto">
+                {((!(isV3Mode || isV5Mode) || isV3EmailMessagesOpen)) && (
+                <select
+                  value={emailTypeFilter}
+                  onChange={(event) => setEmailTypeFilter(event.target.value)}
+                  className="w-full xl:w-auto min-w-[200px] rounded-lg border border-slate-600 bg-[#0f1727] text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+                  onClick={(e) => (isV3Mode || isV5Mode) && e.stopPropagation()}
+                >
+                  {emailTypeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option === "all" ? t("taskProfilePage.showAllEmails") : option}
+                    </option>
+                  ))}
+                </select>
+                )}
+                {(isV3Mode || isV5Mode) && (
+                  <svg className={`w-5 h-5 shrink-0 text-slate-400 transition-transform ${isV3EmailMessagesOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
               </div>
-
-              {(!isV3Mode || isV3EmailMessagesOpen) && (
-              <select
-                value={emailTypeFilter}
-                onChange={(event) => setEmailTypeFilter(event.target.value)}
-                className="w-full xl:w-auto min-w-[200px] rounded-lg border border-slate-600 bg-[#0f1727] text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
-                onClick={(e) => isV3Mode && e.stopPropagation()}
-              >
-                {emailTypeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option === "all" ? t("taskProfilePage.showAllEmails") : option}
-                  </option>
-                ))}
-              </select>
-              )}
             </div>
 
-            {(!isV3Mode || isV3EmailMessagesOpen) && (
+            {((!(isV3Mode || isV5Mode) || isV3EmailMessagesOpen)) && (
             <div className="overflow-auto rounded-xl border border-slate-700 max-h-[400px] custom-scrollbar flex-1">
               <table className="w-full text-sm min-w-[980px]">
                 <thead className="bg-[#1b2942] text-slate-200">
@@ -2146,34 +2430,37 @@ export default function TaskProfilePage() {
             )}
           </section>
 
-          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${isV3Mode && !isV3ClientJournalOpen ? "h-max self-start" : ""}`}>
+          <section className={`rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 flex flex-col xl:col-span-2 ${(isV3Mode || isV5Mode) && !isV3ClientJournalOpen ? "h-max self-start" : ""}`}>
             <div 
-              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${isV3Mode ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClientJournalOpen ? "mb-4" : ""}` : "mb-4"}`}
-              onClick={isV3Mode ? () => setIsV3ClientJournalOpen(!isV3ClientJournalOpen) : undefined}
+              className={`flex flex-row items-center justify-between gap-3 shrink-0 ${(isV3Mode || isV5Mode) ? `cursor-pointer hover:bg-slate-800/50 p-2 -mx-2 rounded-lg transition-colors select-none ${isV3ClientJournalOpen ? "mb-4" : ""}` : "mb-4"}`}
+              onClick={(isV3Mode || isV5Mode) ? () => setIsV3ClientJournalOpen(!isV3ClientJournalOpen) : undefined}
             >
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">{t("taskProfilePage.clientJournal")}</h2>
-                {isV3Mode && (
-                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${isV3ClientJournalOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isV5Mode && <div className="w-1.5 h-4 bg-rose-500 rounded-full"></div>}
+                <h2 className={isV5Mode ? "text-sm uppercase tracking-wide font-semibold text-white" : "text-xl font-bold text-white"}>{t("taskProfilePage.clientJournal")}</h2>
+              </div>
+              <div className="flex items-center justify-end gap-3 w-full xl:w-auto">
+                {((!(isV3Mode || isV5Mode) || isV3ClientJournalOpen)) && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    if (isV3Mode || isV5Mode) e.stopPropagation();
+                    handleExportJournal();
+                  }}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shrink-0"
+                >
+                  {t("taskProfilePage.export")}
+                </button>
+                )}
+                {(isV3Mode || isV5Mode) && (
+                  <svg className={`w-5 h-5 shrink-0 text-slate-400 transition-transform ${isV3ClientJournalOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
               </div>
-              {(!isV3Mode || isV3ClientJournalOpen) && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  if (isV3Mode) e.stopPropagation();
-                  handleExportJournal();
-                }}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shrink-0"
-              >
-                {t("taskProfilePage.export")}
-              </button>
-              )}
             </div>
 
-            {(!isV3Mode || isV3ClientJournalOpen) && (
+            {((!(isV3Mode || isV5Mode) || isV3ClientJournalOpen)) && (
             <div className="overflow-auto rounded-xl border border-slate-700 max-h-[400px] custom-scrollbar flex-1">
               <table className="w-full text-sm min-w-[900px]">
                 <thead className="bg-[#1b2942] text-slate-200">
@@ -2218,7 +2505,7 @@ export default function TaskProfilePage() {
           </section>
         </div>
 
-        {!isV3Mode && (
+        {(!(isV3Mode || isV5Mode) && !isV5Mode) && (
         <section className="rounded-2xl border border-slate-700 bg-[#111a2c] shadow-sm p-4 sm:p-5 mt-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
             <div>
@@ -3019,7 +3306,7 @@ export default function TaskProfilePage() {
                 </div>
               </div>
 
-              {/* Experience Info */}
+              {/* Experience */}
               <section className="space-y-4">
                 <DetailsSectionHeader title={t("taskProfilePage.details.experienceInfo")} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3404,14 +3691,13 @@ export default function TaskProfilePage() {
           type="button"
           onClick={handleToggleV3Mode}
           className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
-            isV3Mode
-              ? "border-purple-500/60 bg-purple-500/20 text-purple-100 hover:bg-purple-500/30"
+            isV3Mode ? "border-purple-500/60 bg-purple-500/20 text-purple-100 hover:bg-purple-500/30"
               : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
           }`}
         >
           <span>V3</span>
           <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
-            {isV3Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+            {(isV3Mode || isV5Mode) ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
           </span>
         </button>
         <button
@@ -3426,6 +3712,34 @@ export default function TaskProfilePage() {
           <span>V4</span>
           <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
             {isV4Mode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleToggleV5Mode}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+            isV5Mode && !isV5aMode
+              ? "border-amber-500/60 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30"
+              : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+          }`}
+        >
+          <span>V5</span>
+          <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+            {(isV5Mode && !isV5aMode) ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleToggleV5aMode}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold tracking-wide shadow-lg transition-colors ${
+            isV5aMode
+              ? "border-orange-500/60 bg-orange-500/20 text-orange-100 hover:bg-orange-500/30"
+              : "border-slate-500/70 bg-[#111a2c] text-slate-100 hover:bg-slate-700/70"
+          }`}
+        >
+          <span>V5a</span>
+          <span className="rounded border border-current/40 px-1.5 py-0.5 text-[10px]">
+            {isV5aMode ? (isRtl ? "مفعل" : "ON") : (isRtl ? "غير مفعل" : "OFF")}
           </span>
         </button>
       </div>
@@ -3802,7 +4116,29 @@ export default function TaskProfilePage() {
                             ? t("taskProfilePage.details.documentsTable.declined")
                             : row.status;
 
-                        return (
+                      
+  const _isOpen_notes = isV5Mode ? v5OpenSections.notes : isV3NoteAccordionOpen;
+  const _toggle_notes = () => isV5Mode ? toggleV5Section("notes") : setIsV3NoteAccordionOpen(!isV3NoteAccordionOpen);
+
+  const _isOpen_trading = isV5Mode ? v5OpenSections.trading : isV3TradingAccountsOpen;
+  const _toggle_trading = () => isV5Mode ? toggleV5Section("trading") : setIsV3TradingAccountsOpen(!isV3TradingAccountsOpen);
+
+  const _isOpen_documents = isV5Mode ? v5OpenSections.documents : isV3DocumentsOpen;
+  const _toggle_documents = () => isV5Mode ? toggleV5Section("documents") : setIsV3DocumentsOpen(!isV3DocumentsOpen);
+
+  const _isOpen_openTasks = isV5Mode ? v5OpenSections.openTasks : isV3OpenTasksOpen;
+  const _toggle_openTasks = () => isV5Mode ? toggleV5Section("openTasks") : setIsV3OpenTasksOpen(!isV3OpenTasksOpen);
+
+  const _isOpen_closedTasks = isV5Mode ? v5OpenSections.closedTasks : isV3ClosedTasksOpen;
+  const _toggle_closedTasks = () => isV5Mode ? toggleV5Section("closedTasks") : setIsV3ClosedTasksOpen(!isV3ClosedTasksOpen);
+
+  const _isOpen_emails = isV5Mode ? v5OpenSections.emails : isV3EmailMessagesOpen;
+  const _toggle_emails = () => isV5Mode ? toggleV5Section("emails") : setIsV3EmailMessagesOpen(!isV3EmailMessagesOpen);
+
+  const _isOpen_journal = isV5Mode ? v5OpenSections.journal : isV3ClientJournalOpen;
+  const _toggle_journal = () => isV5Mode ? toggleV5Section("journal") : setIsV3ClientJournalOpen(!isV3ClientJournalOpen);
+
+  return (
                           <tr key={row.id}>
                             <td className="px-3 py-3 text-slate-100 font-medium max-w-[100px]">{row.type}</td>
                             <td className={`px-3 py-3 font-bold ${getDocumentStatusTone(row.status)}`}>{statusLabel}</td>
